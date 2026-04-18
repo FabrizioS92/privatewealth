@@ -15,17 +15,33 @@ export function KpiCard({ label, value, delta, deltaLabel, accent = false }: Kpi
   return (
     <Card
       className={cn(
-        "relative overflow-hidden border-border bg-card p-5 shadow-[var(--shadow-elevated)]",
-        accent && "bg-gradient-to-br from-primary/15 to-chart-2/10",
+        "hover-lift relative overflow-hidden border-border p-6",
+        accent ? "glass-strong shimmer" : "glass",
       )}
+      style={{ boxShadow: "var(--shadow-elevated)" }}
     >
-      <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">{label}</p>
-      <p className="mt-2 text-2xl font-bold tabular-nums md:text-3xl">{value}</p>
+      {accent && (
+        <span
+          className="pointer-events-none absolute -right-12 -top-12 h-32 w-32 rounded-full opacity-30 blur-3xl"
+          style={{ background: "var(--gradient-gold)" }}
+        />
+      )}
+      <p className="text-[10px] font-medium uppercase tracking-[0.2em] text-gold/80">{label}</p>
+      <p
+        className={cn(
+          "mt-3 text-3xl font-serif tabular-nums tracking-tight md:text-4xl",
+          accent && "gold-text",
+        )}
+      >
+        {value}
+      </p>
       {delta !== undefined && (
         <div
           className={cn(
-            "mt-2 inline-flex items-center gap-1 text-xs font-medium tabular-nums",
-            positive ? "text-success" : "text-destructive",
+            "mt-3 inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium tabular-nums",
+            positive
+              ? "bg-success/10 text-success"
+              : "bg-destructive/10 text-destructive",
           )}
         >
           {positive ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
