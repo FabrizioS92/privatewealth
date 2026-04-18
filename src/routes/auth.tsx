@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
+import { FolioMark } from "@/components/folio-mark";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -72,27 +73,38 @@ function AuthPage() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center px-4 py-10">
-      <div className="w-full max-w-md">
-        <div className="mb-8 text-center">
-          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-chart-2 shadow-[var(--shadow-glow)]">
-            <span className="text-xl font-bold text-primary-foreground">F</span>
-          </div>
-          <h1 className="mt-4 text-2xl font-bold">
+    <div className="relative flex min-h-screen items-center justify-center px-4 py-10">
+      <div
+        className="pointer-events-none absolute left-1/2 top-1/4 h-[500px] w-[500px] -translate-x-1/2 rounded-full opacity-20 blur-[120px]"
+        style={{ background: "var(--gradient-gold)" }}
+      />
+      <div className="relative z-10 w-full max-w-md">
+        <div className="mb-10 text-center">
+          <FolioMark size={56} className="mx-auto" />
+          <p className="mt-4 text-[10px] uppercase tracking-[0.3em] text-gold/80">
+            Private Wealth
+          </p>
+          <h1 className="mt-3 font-serif text-3xl tracking-tight">
             {mode === "signin" ? "Bentornato" : "Crea il tuo account"}
           </h1>
-          <p className="mt-1 text-sm text-muted-foreground">
+          <div className="mx-auto mt-4 gold-divider w-16" />
+          <p className="mt-4 text-sm text-muted-foreground">
             {mode === "signin"
-              ? "Accedi per vedere il tuo portafoglio"
-              : "Inizia a tracciare i tuoi investimenti"}
+              ? "Accedi al tuo portafoglio privato"
+              : "Inizia a curare il tuo patrimonio"}
           </p>
         </div>
 
-        <Card className="border-border bg-card p-6 shadow-[var(--shadow-elevated)]">
+        <Card
+          className="glass border-border p-7"
+          style={{ boxShadow: "var(--shadow-elevated)" }}
+        >
           <form onSubmit={handleSubmit} className="space-y-4">
             {mode === "signup" && (
               <div className="space-y-2">
-                <Label htmlFor="name">Nome</Label>
+                <Label htmlFor="name" className="text-xs uppercase tracking-wider text-muted-foreground">
+                  Nome
+                </Label>
                 <Input
                   id="name"
                   type="text"
@@ -103,7 +115,9 @@ function AuthPage() {
               </div>
             )}
             <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
+              <Label htmlFor="email" className="text-xs uppercase tracking-wider text-muted-foreground">
+                Email
+              </Label>
               <Input
                 id="email"
                 type="email"
@@ -114,7 +128,9 @@ function AuthPage() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
+              <Label htmlFor="password" className="text-xs uppercase tracking-wider text-muted-foreground">
+                Password
+              </Label>
               <Input
                 id="password"
                 type="password"
@@ -125,11 +141,7 @@ function AuthPage() {
                 onChange={(e) => setPassword(e.target.value)}
               />
             </div>
-            <Button
-              type="submit"
-              disabled={loading}
-              className="w-full bg-primary text-primary-foreground hover:opacity-90"
-            >
+            <Button type="submit" variant="luxury" disabled={loading} className="w-full rounded-full">
               {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               {mode === "signin" ? "Accedi" : "Crea account"}
             </Button>
@@ -140,7 +152,7 @@ function AuthPage() {
             <button
               type="button"
               onClick={() => setMode(mode === "signin" ? "signup" : "signin")}
-              className="font-medium text-primary hover:underline"
+              className="font-medium text-gold hover:underline"
             >
               {mode === "signin" ? "Registrati" : "Accedi"}
             </button>

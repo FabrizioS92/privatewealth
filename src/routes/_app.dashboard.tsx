@@ -121,15 +121,20 @@ function Dashboard() {
   if (transactions.length === 0) {
     return (
       <div className="flex min-h-[60vh] flex-col items-center justify-center text-center">
-        <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-primary/30 to-chart-2/20">
-          <Sparkles className="h-7 w-7 text-primary" />
+        <div
+          className="flex h-16 w-16 items-center justify-center rounded-full border border-gold/30"
+          style={{ background: "var(--gradient-gold)" }}
+        >
+          <Sparkles className="h-7 w-7 text-primary-foreground" />
         </div>
-        <h2 className="mt-6 text-2xl font-bold">Benvenuto su Folio</h2>
-        <p className="mt-2 max-w-md text-sm text-muted-foreground">
+        <p className="mt-6 text-[10px] uppercase tracking-[0.3em] text-gold/80">Welcome</p>
+        <h2 className="mt-3 font-serif text-3xl tracking-tight">Benvenuto su Folio</h2>
+        <div className="mx-auto mt-4 gold-divider w-16" />
+        <p className="mt-5 max-w-md text-sm leading-relaxed text-muted-foreground">
           Importa il tuo primo CSV DEGIRO per vedere portafoglio, performance e dividendi
-          in pochi secondi.
+          curati con eleganza.
         </p>
-        <Button asChild className="mt-6 bg-primary text-primary-foreground hover:opacity-90">
+        <Button asChild variant="luxury" className="mt-7 rounded-full px-7">
           <Link to="/import">
             <Upload className="mr-2 h-4 w-4" />
             Importa CSV DEGIRO
@@ -140,10 +145,15 @@ function Dashboard() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       <div>
-        <h1 className="text-2xl font-bold md:text-3xl">Ciao 👋</h1>
-        <p className="text-sm text-muted-foreground">{formatDate(new Date())}</p>
+        <p className="text-[10px] uppercase tracking-[0.25em] text-gold/80">
+          {formatDate(new Date())}
+        </p>
+        <h1 className="mt-2 font-serif text-4xl tracking-tight md:text-5xl">
+          Buongiorno <span className="gold-text italic">·</span>
+        </h1>
+        <div className="mt-4 gold-divider w-16" />
       </div>
 
       <div className="grid gap-4 md:grid-cols-3">
@@ -157,22 +167,20 @@ function Dashboard() {
         <KpiCard label="Dividendi netti" value={formatCurrency(dividendsTotal)} />
       </div>
 
-      <Card className="border-border bg-card p-5">
-        <div className="mb-4 flex items-center justify-between">
+      <Card className="glass hover-lift border-border p-6" style={{ boxShadow: "var(--shadow-elevated)" }}>
+        <div className="mb-5 flex items-center justify-between">
           <div>
-            <h2 className="font-semibold">Capitale investito nel tempo</h2>
-            <p className="text-xs text-muted-foreground">
-              Cumulato basato sulle tue transazioni
-            </p>
+            <p className="text-[10px] uppercase tracking-[0.2em] text-gold/80">Performance</p>
+            <h2 className="mt-1 font-serif text-2xl">Capitale nel tempo</h2>
           </div>
         </div>
         <PerformanceChart data={performance} />
       </Card>
 
-      <Card className="border-border bg-card p-5">
-        <div className="mb-4">
-          <h2 className="font-semibold">Allocazione</h2>
-          <p className="text-xs text-muted-foreground">Distribuzione per posizione</p>
+      <Card className="glass hover-lift border-border p-6" style={{ boxShadow: "var(--shadow-elevated)" }}>
+        <div className="mb-5">
+          <p className="text-[10px] uppercase tracking-[0.2em] text-gold/80">Composizione</p>
+          <h2 className="mt-1 font-serif text-2xl">Allocazione</h2>
         </div>
         <AllocationDonut data={allocation} />
       </Card>
