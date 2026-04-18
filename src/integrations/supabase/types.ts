@@ -14,7 +14,168 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      dividends: {
+        Row: {
+          amount: number
+          created_at: string
+          currency: string
+          dedup_hash: string
+          id: string
+          isin: string
+          name: string
+          net_amount: number
+          pay_date: string
+          source: string
+          ticker: string | null
+          user_id: string
+          withholding_tax: number
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          currency?: string
+          dedup_hash: string
+          id?: string
+          isin: string
+          name: string
+          net_amount: number
+          pay_date: string
+          source?: string
+          ticker?: string | null
+          user_id: string
+          withholding_tax?: number
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          currency?: string
+          dedup_hash?: string
+          id?: string
+          isin?: string
+          name?: string
+          net_amount?: number
+          pay_date?: string
+          source?: string
+          ticker?: string | null
+          user_id?: string
+          withholding_tax?: number
+        }
+        Relationships: []
+      }
+      manual_prices: {
+        Row: {
+          currency: string
+          id: string
+          isin: string
+          price: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          currency?: string
+          id?: string
+          isin: string
+          price: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          currency?: string
+          id?: string
+          isin?: string
+          price?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          base_currency: string
+          created_at: string
+          display_name: string | null
+          id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          base_currency?: string
+          created_at?: string
+          display_name?: string | null
+          id?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          base_currency?: string
+          created_at?: string
+          display_name?: string | null
+          id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      transactions: {
+        Row: {
+          created_at: string
+          currency: string
+          dedup_hash: string
+          exchange: string | null
+          fees: number
+          fx_rate: number | null
+          id: string
+          isin: string
+          name: string
+          price: number
+          quantity: number
+          source: string
+          ticker: string | null
+          total: number
+          trade_date: string
+          type: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          currency?: string
+          dedup_hash: string
+          exchange?: string | null
+          fees?: number
+          fx_rate?: number | null
+          id?: string
+          isin: string
+          name: string
+          price: number
+          quantity: number
+          source?: string
+          ticker?: string | null
+          total: number
+          trade_date: string
+          type: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          currency?: string
+          dedup_hash?: string
+          exchange?: string | null
+          fees?: number
+          fx_rate?: number | null
+          id?: string
+          isin?: string
+          name?: string
+          price?: number
+          quantity?: number
+          source?: string
+          ticker?: string | null
+          total?: number
+          trade_date?: string
+          type?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
