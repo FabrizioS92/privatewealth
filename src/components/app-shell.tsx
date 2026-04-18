@@ -40,14 +40,22 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 key={item.to}
                 to={item.to}
                 className={cn(
-                  "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
+                  "group relative flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-300",
                   active
-                    ? "bg-sidebar-accent text-foreground"
-                    : "text-muted-foreground hover:bg-sidebar-accent/50 hover:text-foreground",
+                    ? "bg-gradient-to-r from-primary/15 via-primary/5 to-transparent text-foreground"
+                    : "text-muted-foreground hover:bg-sidebar-accent/40 hover:text-foreground",
                 )}
               >
-                <Icon className="h-4 w-4" />
-                {item.label}
+                {active && (
+                  <span className="absolute left-0 top-1/2 h-6 w-[2px] -translate-y-1/2 rounded-r bg-gradient-to-b from-transparent via-gold to-transparent" />
+                )}
+                <Icon
+                  className={cn(
+                    "h-4 w-4 transition-colors",
+                    active ? "text-gold" : "group-hover:text-gold/80",
+                  )}
+                />
+                <span className="tracking-wide">{item.label}</span>
               </Link>
             );
           })}
@@ -77,12 +85,15 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       </aside>
 
       {/* Mobile top bar */}
-      <header className="sticky top-0 z-30 flex h-14 items-center justify-between border-b border-border bg-background/80 px-4 backdrop-blur md:hidden">
-        <div className="flex items-center gap-2">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-primary to-chart-2">
-            <span className="text-sm font-bold text-primary-foreground">F</span>
+      <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-border bg-background/70 px-4 backdrop-blur-xl md:hidden">
+        <div className="flex items-center gap-2.5">
+          <FolioMark size={32} />
+          <div>
+            <p className="font-serif text-base leading-none">Folio</p>
+            <p className="mt-0.5 text-[8px] uppercase tracking-[0.18em] text-gold/80">
+              Private Wealth
+            </p>
           </div>
-          <span className="font-semibold">Folio</span>
         </div>
         <Button variant="ghost" size="sm" onClick={signOut}>
           <LogOut className="h-4 w-4" />
@@ -90,12 +101,12 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       </header>
 
       {/* Main content */}
-      <main className="md:ml-64 md:pb-0 pb-20">
-        <div className="mx-auto max-w-6xl px-4 py-6 md:px-8 md:py-8">{children}</div>
+      <main className="md:ml-64 md:pb-0 pb-24">
+        <div className="mx-auto max-w-6xl px-4 py-6 md:px-10 md:py-10">{children}</div>
       </main>
 
       {/* Mobile bottom nav */}
-      <nav className="fixed bottom-0 left-0 right-0 z-30 grid grid-cols-5 border-t border-border bg-background/95 backdrop-blur md:hidden">
+      <nav className="fixed bottom-0 left-0 right-0 z-30 grid grid-cols-5 border-t border-border bg-background/85 px-1 pt-1.5 pb-2 backdrop-blur-xl md:hidden">
         {NAV_ITEMS.map((item) => {
           const Icon = item.icon;
           const active = location.pathname.startsWith(item.to);
@@ -104,10 +115,13 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               key={item.to}
               to={item.to}
               className={cn(
-                "flex flex-col items-center justify-center gap-1 py-2.5 text-[10px] font-medium transition-colors",
-                active ? "text-primary" : "text-muted-foreground",
+                "relative flex flex-col items-center justify-center gap-1 rounded-lg py-2 text-[10px] font-medium tracking-wide transition-colors",
+                active ? "text-gold" : "text-muted-foreground",
               )}
             >
+              {active && (
+                <span className="absolute -top-1.5 h-[2px] w-6 rounded-full bg-gold" />
+              )}
               <Icon className="h-5 w-5" />
               {item.label}
             </Link>
