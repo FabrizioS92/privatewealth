@@ -129,33 +129,43 @@ function OnboardingPage() {
   const Icon = Current.icon;
 
   return (
-    <div className="flex min-h-screen items-center justify-center px-4 py-10">
-      <div className="w-full max-w-md">
-        <Card className="border-border bg-card p-8 shadow-[var(--shadow-elevated)]">
-          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-primary/30 to-chart-2/20">
-            <Icon className="h-6 w-6 text-primary" />
+    <div className="relative flex min-h-screen items-center justify-center px-4 py-10">
+      <div
+        className="pointer-events-none absolute left-1/2 top-1/3 h-[400px] w-[400px] -translate-x-1/2 rounded-full opacity-20 blur-[120px]"
+        style={{ background: "var(--gradient-gold)" }}
+      />
+      <div className="relative z-10 w-full max-w-md">
+        <Card className="glass border-border p-8" style={{ boxShadow: "var(--shadow-elevated)" }}>
+          <div
+            className="mx-auto flex h-14 w-14 items-center justify-center rounded-full border border-gold/30"
+            style={{ background: "var(--gradient-gold)" }}
+          >
+            <Icon className="h-6 w-6 text-primary-foreground" />
           </div>
           <div className="mt-6 text-center">
-            <h1 className="text-2xl font-bold">{Current.title}</h1>
-            <p className="mt-2 text-sm text-muted-foreground">{Current.text}</p>
+            <p className="text-[10px] uppercase tracking-[0.3em] text-gold/80">
+              Step {step + 1} / {STEPS.length}
+            </p>
+            <h1 className="mt-3 font-serif text-2xl tracking-tight md:text-3xl">
+              {Current.title}
+            </h1>
+            <div className="mx-auto mt-3 gold-divider w-12" />
+            <p className="mt-4 text-sm leading-relaxed text-muted-foreground">{Current.text}</p>
           </div>
 
           <div className="mt-6 flex justify-center gap-1.5">
             {STEPS.map((_, i) => (
               <div
                 key={i}
-                className={`h-1.5 rounded-full transition-all ${
-                  i === step ? "w-8 bg-primary" : "w-1.5 bg-muted"
+                className={`h-[3px] rounded-full transition-all duration-500 ${
+                  i === step ? "w-10 bg-gold" : "w-2 bg-muted"
                 }`}
               />
             ))}
           </div>
 
-          <div className="mt-6 space-y-2">
-            <Button
-              onClick={next}
-              className="w-full bg-primary text-primary-foreground hover:opacity-90"
-            >
+          <div className="mt-7 space-y-2">
+            <Button onClick={next} variant="luxury" className="w-full rounded-full">
               {step < STEPS.length - 1 ? "Avanti" : "Importa CSV"}
               <ArrowRight className="ml-1 h-4 w-4" />
             </Button>
@@ -163,15 +173,15 @@ function OnboardingPage() {
               <Button
                 onClick={loadDemo}
                 disabled={loadingDemo}
-                variant="ghost"
-                className="w-full"
+                variant="gold"
+                className="w-full rounded-full"
               >
                 {loadingDemo && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Prova con dati demo
+                Esplora con dati demo
               </Button>
             )}
             {step > 0 && (
-              <Button asChild variant="ghost" className="w-full">
+              <Button asChild variant="ghost" className="w-full text-muted-foreground">
                 <Link to="/dashboard">Salta tour</Link>
               </Button>
             )}
