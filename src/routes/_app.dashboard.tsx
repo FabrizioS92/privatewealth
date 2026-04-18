@@ -121,15 +121,20 @@ function Dashboard() {
   if (transactions.length === 0) {
     return (
       <div className="flex min-h-[60vh] flex-col items-center justify-center text-center">
-        <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-primary/30 to-chart-2/20">
-          <Sparkles className="h-7 w-7 text-primary" />
+        <div
+          className="flex h-16 w-16 items-center justify-center rounded-full border border-gold/30"
+          style={{ background: "var(--gradient-gold)" }}
+        >
+          <Sparkles className="h-7 w-7 text-primary-foreground" />
         </div>
-        <h2 className="mt-6 text-2xl font-bold">Benvenuto su Folio</h2>
-        <p className="mt-2 max-w-md text-sm text-muted-foreground">
+        <p className="mt-6 text-[10px] uppercase tracking-[0.3em] text-gold/80">Welcome</p>
+        <h2 className="mt-3 font-serif text-3xl tracking-tight">Benvenuto su Folio</h2>
+        <div className="mx-auto mt-4 gold-divider w-16" />
+        <p className="mt-5 max-w-md text-sm leading-relaxed text-muted-foreground">
           Importa il tuo primo CSV DEGIRO per vedere portafoglio, performance e dividendi
-          in pochi secondi.
+          curati con eleganza.
         </p>
-        <Button asChild className="mt-6 bg-primary text-primary-foreground hover:opacity-90">
+        <Button asChild variant="luxury" className="mt-7 rounded-full px-7">
           <Link to="/import">
             <Upload className="mr-2 h-4 w-4" />
             Importa CSV DEGIRO
