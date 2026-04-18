@@ -2,6 +2,7 @@ import { Link, useLocation } from "@tanstack/react-router";
 import { Home, PieChart, ArrowLeftRight, Coins, Upload, Settings, LogOut } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
+import { FolioMark } from "@/components/folio-mark";
 import { cn } from "@/lib/utils";
 
 const NAV_ITEMS = [
@@ -19,15 +20,13 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   return (
     <div className="min-h-screen bg-background">
       {/* Desktop sidebar */}
-      <aside className="fixed inset-y-0 left-0 z-30 hidden w-64 flex-col border-r border-border bg-sidebar md:flex">
-        <div className="flex h-16 items-center gap-2 border-b border-border px-6">
-          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-chart-2 shadow-lg">
-            <span className="text-lg font-bold text-primary-foreground">F</span>
-          </div>
+      <aside className="fixed inset-y-0 left-0 z-30 hidden w-64 flex-col border-r border-border bg-sidebar/80 backdrop-blur-xl md:flex">
+        <div className="flex h-20 items-center gap-3 border-b border-border px-6">
+          <FolioMark size={40} />
           <div>
-            <p className="text-sm font-semibold">Folio</p>
-            <p className="text-[10px] uppercase tracking-wider text-muted-foreground">
-              Wealth tracker
+            <p className="font-serif text-lg leading-none tracking-wide">Folio</p>
+            <p className="mt-1 text-[9px] uppercase tracking-[0.18em] text-gold/80">
+              Private Wealth
             </p>
           </div>
         </div>
