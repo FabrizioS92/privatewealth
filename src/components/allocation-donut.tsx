@@ -49,7 +49,7 @@ export function AllocationDonut({
                 borderRadius: 12,
                 fontSize: 12,
               }}
-              formatter={(v: number) => [formatCurrency(v, currency), ""]}
+              formatter={(v) => [formatCurrency(Number(v), currency), ""]}
             />
           </PieChart>
         </ResponsiveContainer>

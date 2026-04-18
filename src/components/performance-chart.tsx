@@ -47,7 +47,7 @@ export function PerformanceChart({
             fontSize: 12,
           }}
           labelFormatter={(v) => formatShortDate(v as string)}
-          formatter={(v: number) => [formatCurrency(v, currency), "Valore"]}
+          formatter={(v) => [formatCurrency(Number(v), currency), "Valore"]}
         />
         <Area
           type="monotone"
