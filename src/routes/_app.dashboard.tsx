@@ -140,10 +140,15 @@ function Dashboard() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       <div>
-        <h1 className="text-2xl font-bold md:text-3xl">Ciao 👋</h1>
-        <p className="text-sm text-muted-foreground">{formatDate(new Date())}</p>
+        <p className="text-[10px] uppercase tracking-[0.25em] text-gold/80">
+          {formatDate(new Date())}
+        </p>
+        <h1 className="mt-2 font-serif text-4xl tracking-tight md:text-5xl">
+          Buongiorno <span className="gold-text italic">·</span>
+        </h1>
+        <div className="mt-4 gold-divider w-16" />
       </div>
 
       <div className="grid gap-4 md:grid-cols-3">
@@ -157,22 +162,20 @@ function Dashboard() {
         <KpiCard label="Dividendi netti" value={formatCurrency(dividendsTotal)} />
       </div>
 
-      <Card className="border-border bg-card p-5">
-        <div className="mb-4 flex items-center justify-between">
+      <Card className="glass hover-lift border-border p-6" style={{ boxShadow: "var(--shadow-elevated)" }}>
+        <div className="mb-5 flex items-center justify-between">
           <div>
-            <h2 className="font-semibold">Capitale investito nel tempo</h2>
-            <p className="text-xs text-muted-foreground">
-              Cumulato basato sulle tue transazioni
-            </p>
+            <p className="text-[10px] uppercase tracking-[0.2em] text-gold/80">Performance</p>
+            <h2 className="mt-1 font-serif text-2xl">Capitale nel tempo</h2>
           </div>
         </div>
         <PerformanceChart data={performance} />
       </Card>
 
-      <Card className="border-border bg-card p-5">
-        <div className="mb-4">
-          <h2 className="font-semibold">Allocazione</h2>
-          <p className="text-xs text-muted-foreground">Distribuzione per posizione</p>
+      <Card className="glass hover-lift border-border p-6" style={{ boxShadow: "var(--shadow-elevated)" }}>
+        <div className="mb-5">
+          <p className="text-[10px] uppercase tracking-[0.2em] text-gold/80">Composizione</p>
+          <h2 className="mt-1 font-serif text-2xl">Allocazione</h2>
         </div>
         <AllocationDonut data={allocation} />
       </Card>
