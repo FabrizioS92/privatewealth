@@ -3,7 +3,7 @@ import { ArrowRight, BarChart3, Lock, Upload, Wallet } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 
-export const Route = createFileRoute("/")({
+export const Route = createFileRoute("/welcome")({
   head: () => ({
     meta: [
       { title: "Folio — Wealth tracker per investitori DEGIRO" },
