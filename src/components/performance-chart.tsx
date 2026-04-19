@@ -15,11 +15,11 @@ export function PerformanceChart({
 }) {
   return (
     <ResponsiveContainer width="100%" height={260}>
-      <AreaChart data={data} margin={{ top: 10, right: 0, left: 0, bottom: 0 }}>
+      <AreaChart data={data} margin={{ top: 10, right: 8, left: 0, bottom: 0 }}>
         <defs>
           <linearGradient id="perfGradient" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="var(--color-primary)" stopOpacity={0.4} />
-            <stop offset="100%" stopColor="var(--color-primary)" stopOpacity={0} />
+            <stop offset="0%" stopColor="var(--color-mint)" stopOpacity={0.55} />
+            <stop offset="100%" stopColor="var(--color-mint)" stopOpacity={0} />
           </linearGradient>
         </defs>
         <XAxis
@@ -43,8 +43,9 @@ export function PerformanceChart({
           contentStyle={{
             backgroundColor: "var(--color-popover)",
             border: "1px solid var(--color-border)",
-            borderRadius: 12,
+            borderRadius: 16,
             fontSize: 12,
+            boxShadow: "var(--shadow-elevated)",
           }}
           labelFormatter={(v) => formatShortDate(v as string)}
           formatter={(v) => [formatCurrency(Number(v), currency), "Valore"]}
@@ -52,9 +53,11 @@ export function PerformanceChart({
         <Area
           type="monotone"
           dataKey="value"
-          stroke="var(--color-primary)"
-          strokeWidth={2}
+          stroke="var(--color-mint)"
+          strokeWidth={2.5}
           fill="url(#perfGradient)"
+          isAnimationActive
+          animationDuration={900}
         />
       </AreaChart>
     </ResponsiveContainer>

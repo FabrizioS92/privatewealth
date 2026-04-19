@@ -1,7 +1,7 @@
 import { cn } from "@/lib/utils";
 
 /**
- * Folio monogram — luxury seal, serif "F" inside a gold ring.
+ * Folio mark — soft squircle with a geometric "F".
  */
 export function FolioMark({
   size = 36,
@@ -12,27 +12,25 @@ export function FolioMark({
 }) {
   return (
     <div
-      className={cn(
-        "relative flex items-center justify-center rounded-full",
-        className,
-      )}
+      className={cn("relative flex items-center justify-center", className)}
       style={{
         width: size,
         height: size,
-        background: "var(--gradient-gold)",
-        boxShadow: "var(--shadow-gold-ring), 0 8px 24px -8px oklch(0.82 0.12 85 / 35%)",
+        background: "var(--gradient-mint)",
+        borderRadius: size * 0.32,
+        boxShadow: "var(--shadow-mint)",
       }}
     >
       <span
-        className="font-serif italic font-semibold"
+        className="font-display font-bold"
         style={{
-          fontSize: size * 0.5,
-          color: "oklch(0.13 0.008 60)",
+          fontSize: size * 0.52,
+          color: "oklch(0.18 0.04 160)",
           lineHeight: 1,
           marginTop: -size * 0.02,
         }}
       >
-        F
+        f
       </span>
     </div>
   );
