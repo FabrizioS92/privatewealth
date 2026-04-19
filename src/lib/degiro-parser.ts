@@ -93,10 +93,15 @@ function pick(row: Record<string, string>, keys: string[]): string {
 function detectFile(headers: string[]): "transactions" | "account" | "unknown" {
   const h = headers.map((x) => x.toLowerCase().trim());
   const has = (s: string) => h.some((x) => x.includes(s));
-  if (has("isin") && (has("aantal") || has("quantity")) && (has("koers") || has("price"))) {
+  // transactions: ISIN + quantity (aantal/quantity/quantità) + price (koers/price/quotazione)
+  if (
+    has("isin") &&
+    (has("aantal") || has("quantity") || has("quantità") || has("quantita")) &&
+    (has("koers") || has("price") || has("quotazione"))
+  ) {
     return "transactions";
   }
-  if (has("omschrijving") || has("description")) {
+  if (has("omschrijving") || has("description") || has("descrizione")) {
     return "account";
   }
   return "unknown";
@@ -105,18 +110,33 @@ function detectFile(headers: string[]): "transactions" | "account" | "unknown" {
 // ---------- transactions parser ----------
 
 async function parseTransactionRow(row: Record<string, string>): Promise<ParsedTransaction | null> {
-  const dateRaw = pick(row, ["Datum", "Date"]);
+  const dateRaw = pick(row, ["Datum", "Date", "Data"]);
   const isin = pick(row, ["ISIN"]).trim().toUpperCase();
-  const name = pick(row, ["Product", "Producto"]).trim();
-  const exchange = pick(row, ["Beurs", "Venue", "Exchange"]).trim() || null;
-  const qtyRaw = pick(row, ["Aantal", "Quantity"]);
-  const priceRaw = pick(row, ["Koers", "Price"]);
-  const currency = (pick(row, ["Mutatie", "Currency"]) || "EUR").trim().toUpperCase().slice(0, 3);
+  const name = pick(row, ["Product", "Producto", "Prodotto"]).trim();
+  const exchange =
+    pick(row, ["Beurs", "Venue", "Exchange", "Borsa", "Borsa di riferimento"]).trim() || null;
+  const qtyRaw = pick(row, ["Aantal", "Quantity", "Quantità", "Quantita"]);
+  const priceRaw = pick(row, ["Koers", "Price", "Quotazione"]);
+  // currency: prefer explicit currency col; DEGIRO IT puts it in unnamed col next to "Quotazione"/"Valore locale"
+  const currency =
+    (
+      pick(row, ["Mutatie", "Currency", "Valuta", "Divisa"]) ||
+      pick(row, ["Valore locale"]) ||
+      "EUR"
+    )
+      .trim()
+      .toUpperCase()
+      .slice(0, 3);
   const feesRaw =
-    pick(row, ["Transactiekosten en/of", "Transaction and/or third", "Fees"]) ||
-    pick(row, ["Kosten", "Costs"]);
-  const totalRaw = pick(row, ["Totaal", "Total"]);
-  const fxRaw = pick(row, ["Wisselkoers", "FX"]);
+    pick(row, [
+      "Transactiekosten en/of",
+      "Transaction and/or third",
+      "Fees",
+      "Costi di transazione e/o di terze parti EUR",
+      "Costi di transazione",
+    ]) || pick(row, ["Kosten", "Costs", "Commissioni"]);
+  const totalRaw = pick(row, ["Totaal", "Total", "Totale EUR", "Totale"]);
+  const fxRaw = pick(row, ["Wisselkoers", "FX", "Tasso di cambio"]);
 
   if (!isin || !dateRaw) return null;
 
@@ -165,12 +185,16 @@ async function parseAccountRows(rows: Record<string, string>[]): Promise<ParsedD
   >();
 
   for (const row of rows) {
-    const dateRaw = pick(row, ["Datum", "Date"]);
-    const desc = pick(row, ["Omschrijving", "Description"]);
+    const dateRaw = pick(row, ["Datum", "Date", "Data"]);
+    const desc = pick(row, ["Omschrijving", "Description", "Descrizione"]);
     const isin = pick(row, ["ISIN"]).trim().toUpperCase();
-    const name = pick(row, ["Product", "Producto"]).trim();
-    const currency = (pick(row, ["Mutatie", "Currency"]) || "EUR").trim().toUpperCase().slice(0, 3);
-    const amountRaw = pick(row, ["", "Bedrag", "Amount"]);
+    const name = pick(row, ["Product", "Producto", "Prodotto"]).trim();
+    const currency =
+      (pick(row, ["Mutatie", "Currency", "Valuta", "Divisa"]) || "EUR")
+        .trim()
+        .toUpperCase()
+        .slice(0, 3);
+    const amountRaw = pick(row, ["", "Bedrag", "Amount", "Importo"]);
     const amount = normalizeNumber(amountRaw);
 
     if (!isin || !dateRaw || !desc) continue;
