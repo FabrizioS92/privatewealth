@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
+import { motion } from "framer-motion";
 import { Pencil } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
@@ -23,6 +24,8 @@ export const Route = createFileRoute("/_app/portfolio")({
   head: () => ({ meta: [{ title: "Portafoglio — Folio" }] }),
   component: PortfolioPage,
 });
+
+const TONES = ["bg-mint-soft", "bg-peach", "bg-lavender", "bg-coral/20"];
 
 function PortfolioPage() {
   const { user } = useAuth();
@@ -93,89 +96,105 @@ function PortfolioPage() {
     setEditPrice("");
   };
 
-  if (loading) return <Skeleton className="h-96" />;
+  if (loading) return <Skeleton className="h-96 rounded-3xl" />;
 
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold md:text-3xl">Portafoglio</h1>
-        <p className="text-sm text-muted-foreground">
-          {positions.length} posizioni aperte · Tocca per aggiornare il prezzo
+        <h1 className="font-display text-3xl font-semibold tracking-tight md:text-4xl">
+          Portafoglio
+        </h1>
+        <p className="mt-1 text-sm text-muted-foreground">
+          {positions.length} posizioni · Tocca per aggiornare il prezzo
         </p>
       </div>
 
       {positions.length === 0 ? (
-        <Card className="border-border bg-card p-10 text-center text-muted-foreground">
+        <Card className="card-soft p-10 text-center text-muted-foreground">
           Nessuna posizione aperta. Importa un CSV DEGIRO per iniziare.
         </Card>
       ) : (
-        <div className="space-y-2">
-          {positions.map((p) => {
+        <div className="space-y-3">
+          {positions.map((p, i) => {
             const currentPrice = prices[p.isin] ?? p.avg_cost;
             const value = p.quantity * currentPrice;
             const pnl = value - p.total_invested;
             const pnlPct = p.total_invested > 0 ? pnl / p.total_invested : 0;
             const positive = pnl >= 0;
+            const tone = TONES[i % TONES.length];
+            const initials = p.name
+              .split(" ")
+              .filter(Boolean)
+              .slice(0, 2)
+              .map((w) => w[0])
+              .join("")
+              .toUpperCase();
             return (
-              <Card
+              <motion.div
                 key={p.isin}
-                className="border-border bg-card p-4 transition-colors hover:bg-accent/30"
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.35, delay: Math.min(i, 8) * 0.04 }}
               >
-                <div className="flex items-start justify-between gap-3">
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate font-semibold">{p.name}</p>
-                    <p className="font-mono text-[11px] text-muted-foreground">{p.isin}</p>
-                    <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
-                      <span>
-                        Qty: <span className="tabular-nums text-foreground">{formatNumber(p.quantity, 4)}</span>
-                      </span>
-                      <span>
-                        PMC:{" "}
-                        <span className="tabular-nums text-foreground">
-                          {formatCurrency(p.avg_cost, p.currency)}
+                <Card className="card-soft hover-lift p-4">
+                  <div className="flex items-start gap-3">
+                    <div
+                      className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl ${tone} font-display text-sm font-bold text-ink`}
+                    >
+                      {initials}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate font-semibold">{p.name}</p>
+                      <p className="font-mono text-[11px] text-muted-foreground">{p.isin}</p>
+                      <div className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-xs text-muted-foreground">
+                        <span>
+                          Qty:{" "}
+                          <span className="tabular-nums text-foreground">
+                            {formatNumber(p.quantity, 4)}
+                          </span>
                         </span>
-                      </span>
-                      <span>
-                        Px:{" "}
-                        <span className="tabular-nums text-foreground">
-                          {formatCurrency(currentPrice, p.currency)}
+                        <span>
+                          PMC:{" "}
+                          <span className="tabular-nums text-foreground">
+                            {formatCurrency(p.avg_cost, p.currency)}
+                          </span>
                         </span>
-                      </span>
+                      </div>
+                    </div>
+                    <div className="shrink-0 text-right">
+                      <p className="font-display font-semibold tabular-nums">
+                        {formatCurrency(value, p.currency)}
+                      </p>
+                      <p
+                        className={`pill mt-1 ${positive ? "pill-mint" : "pill-coral"}`}
+                      >
+                        {positive ? "+" : ""}
+                        {formatPercent(pnlPct, 2)}
+                      </p>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="mt-1 h-7 px-2 text-[11px]"
+                        onClick={() => {
+                          setEditing(p);
+                          setEditPrice(String(currentPrice));
+                        }}
+                      >
+                        <Pencil className="mr-1 h-3 w-3" /> Prezzo
+                      </Button>
                     </div>
                   </div>
-                  <div className="text-right">
-                    <p className="font-semibold tabular-nums">{formatCurrency(value, p.currency)}</p>
-                    <p
-                      className={`tabular-nums text-xs font-medium ${
-                        positive ? "text-success" : "text-destructive"
-                      }`}
-                    >
-                      {positive ? "+" : ""}
-                      {formatCurrency(pnl, p.currency)} ({formatPercent(pnlPct, 2)})
-                    </p>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="mt-1 h-7 px-2 text-xs"
-                      onClick={() => {
-                        setEditing(p);
-                        setEditPrice(String(currentPrice));
-                      }}
-                    >
-                      <Pencil className="mr-1 h-3 w-3" /> Prezzo
-                    </Button>
-                  </div>
-                </div>
-              </Card>
+                </Card>
+              </motion.div>
             );
           })}
         </div>
       )}
 
       <Dialog open={!!editing} onOpenChange={(o) => !o && setEditing(null)}>
-        <DialogContent className="bg-card">
+        <DialogContent className="rounded-3xl">
           <DialogHeader>
-            <DialogTitle>Aggiorna prezzo</DialogTitle>
+            <DialogTitle className="font-display">Aggiorna prezzo</DialogTitle>
           </DialogHeader>
           {editing && (
             <div className="space-y-4">
@@ -191,6 +210,7 @@ function PortfolioPage() {
                   step="0.0001"
                   value={editPrice}
                   onChange={(e) => setEditPrice(e.target.value)}
+                  className="h-11 rounded-2xl bg-secondary/60"
                 />
               </div>
             </div>
@@ -199,12 +219,7 @@ function PortfolioPage() {
             <Button variant="ghost" onClick={() => setEditing(null)}>
               Annulla
             </Button>
-            <Button
-              onClick={savePrice}
-              className="bg-primary text-primary-foreground hover:opacity-90"
-            >
-              Salva
-            </Button>
+            <Button onClick={savePrice}>Salva</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

@@ -62,29 +62,40 @@ function SettingsPage() {
     toast.success("Dati eliminati");
   };
 
-  if (loading) return <Skeleton className="h-64" />;
+  if (loading) return <Skeleton className="h-64 rounded-3xl" />;
 
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold md:text-3xl">Impostazioni</h1>
-        <p className="text-sm text-muted-foreground">{user?.email}</p>
+        <h1 className="font-display text-3xl font-semibold tracking-tight md:text-4xl">
+          Impostazioni
+        </h1>
+        <p className="mt-1 text-sm text-muted-foreground">{user?.email}</p>
       </div>
 
-      <Card className="border-border bg-card p-6">
-        <h2 className="mb-4 font-semibold">Profilo</h2>
+      <Card className="card-soft p-6 md:p-7">
+        <h2 className="mb-4 font-display text-lg font-semibold">Profilo</h2>
         <div className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="dn">Nome visualizzato</Label>
-            <Input id="dn" value={displayName} onChange={(e) => setDisplayName(e.target.value)} />
+            <Label htmlFor="dn" className="text-xs font-medium text-muted-foreground">
+              Nome visualizzato
+            </Label>
+            <Input
+              id="dn"
+              value={displayName}
+              onChange={(e) => setDisplayName(e.target.value)}
+              className="h-11 rounded-2xl bg-secondary/60"
+            />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="cur">Valuta base</Label>
+            <Label htmlFor="cur" className="text-xs font-medium text-muted-foreground">
+              Valuta base
+            </Label>
             <select
               id="cur"
               value={currency}
               onChange={(e) => setCurrency(e.target.value)}
-              className="flex h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
+              className="flex h-11 w-full rounded-2xl border border-input bg-secondary/60 px-3 text-sm"
             >
               <option value="EUR">EUR (€)</option>
               <option value="USD">USD ($)</option>
@@ -92,19 +103,15 @@ function SettingsPage() {
               <option value="CHF">CHF</option>
             </select>
           </div>
-          <Button
-            onClick={save}
-            disabled={saving}
-            className="bg-primary text-primary-foreground hover:opacity-90"
-          >
+          <Button onClick={save} disabled={saving}>
             {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             Salva modifiche
           </Button>
         </div>
       </Card>
 
-      <Card className="border-border bg-card p-6">
-        <h2 className="font-semibold">Zona pericolo</h2>
+      <Card className="card-soft p-6 md:p-7">
+        <h2 className="font-display text-lg font-semibold">Zona pericolo</h2>
         <p className="mt-1 text-sm text-muted-foreground">
           Elimina tutti i dati o esci dall'account.
         </p>

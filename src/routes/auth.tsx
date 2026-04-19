@@ -75,34 +75,27 @@ function AuthPage() {
   return (
     <div className="relative flex min-h-screen items-center justify-center px-4 py-10">
       <div
-        className="pointer-events-none absolute left-1/2 top-1/4 h-[500px] w-[500px] -translate-x-1/2 rounded-full opacity-20 blur-[120px]"
-        style={{ background: "var(--gradient-gold)" }}
+        className="pointer-events-none absolute left-1/2 top-1/4 h-[500px] w-[500px] -translate-x-1/2 rounded-full opacity-40 blur-[120px]"
+        style={{ background: "var(--gradient-mint)" }}
       />
       <div className="relative z-10 w-full max-w-md">
-        <div className="mb-10 text-center">
+        <div className="mb-8 text-center">
           <FolioMark size={56} className="mx-auto" />
-          <p className="mt-4 text-[10px] uppercase tracking-[0.3em] text-gold/80">
-            Private Wealth
-          </p>
-          <h1 className="mt-3 font-serif text-3xl tracking-tight">
+          <h1 className="mt-6 font-display text-3xl font-semibold tracking-tight">
             {mode === "signin" ? "Bentornato" : "Crea il tuo account"}
           </h1>
-          <div className="mx-auto mt-4 gold-divider w-16" />
-          <p className="mt-4 text-sm text-muted-foreground">
+          <p className="mt-3 text-sm text-muted-foreground">
             {mode === "signin"
-              ? "Accedi al tuo portafoglio privato"
-              : "Inizia a curare il tuo patrimonio"}
+              ? "Accedi al tuo portafoglio"
+              : "Inizia a tracciare i tuoi investimenti"}
           </p>
         </div>
 
-        <Card
-          className="glass border-border p-7"
-          style={{ boxShadow: "var(--shadow-elevated)" }}
-        >
+        <Card className="card-soft p-7 md:p-8">
           <form onSubmit={handleSubmit} className="space-y-4">
             {mode === "signup" && (
               <div className="space-y-2">
-                <Label htmlFor="name" className="text-xs uppercase tracking-wider text-muted-foreground">
+                <Label htmlFor="name" className="text-xs font-medium text-muted-foreground">
                   Nome
                 </Label>
                 <Input
@@ -111,11 +104,12 @@ function AuthPage() {
                   placeholder="Marco Rossi"
                   value={displayName}
                   onChange={(e) => setDisplayName(e.target.value)}
+                  className="h-11 rounded-2xl bg-secondary/60"
                 />
               </div>
             )}
             <div className="space-y-2">
-              <Label htmlFor="email" className="text-xs uppercase tracking-wider text-muted-foreground">
+              <Label htmlFor="email" className="text-xs font-medium text-muted-foreground">
                 Email
               </Label>
               <Input
@@ -125,10 +119,11 @@ function AuthPage() {
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
+                className="h-11 rounded-2xl bg-secondary/60"
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="password" className="text-xs uppercase tracking-wider text-muted-foreground">
+              <Label htmlFor="password" className="text-xs font-medium text-muted-foreground">
                 Password
               </Label>
               <Input
@@ -139,9 +134,10 @@ function AuthPage() {
                 minLength={6}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
+                className="h-11 rounded-2xl bg-secondary/60"
               />
             </div>
-            <Button type="submit" variant="luxury" disabled={loading} className="w-full rounded-full">
+            <Button type="submit" disabled={loading} className="h-12 w-full">
               {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               {mode === "signin" ? "Accedi" : "Crea account"}
             </Button>
@@ -152,7 +148,7 @@ function AuthPage() {
             <button
               type="button"
               onClick={() => setMode(mode === "signin" ? "signup" : "signin")}
-              className="font-medium text-gold hover:underline"
+              className="font-semibold text-primary hover:underline"
             >
               {mode === "signin" ? "Registrati" : "Accedi"}
             </button>

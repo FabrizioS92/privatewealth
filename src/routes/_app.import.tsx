@@ -1,5 +1,6 @@
 import { useState, type ChangeEvent } from "react";
 import { createFileRoute } from "@tanstack/react-router";
+import { motion } from "framer-motion";
 import { CheckCircle2, FileText, Loader2, Upload } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
@@ -53,7 +54,6 @@ function ImportPage() {
 
       if (result.transactions.length > 0) {
         const rows = result.transactions.map((t) => ({ ...t, user_id: user.id }));
-        // Use upsert with ignoreDuplicates via onConflict on dedup_hash
         const { error, count } = await supabase
           .from("transactions")
           .upsert(rows, {
@@ -92,16 +92,17 @@ function ImportPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold md:text-3xl">Importa CSV DEGIRO</h1>
-        <p className="text-sm text-muted-foreground">
-          Carica <code className="rounded bg-muted px-1.5 py-0.5 text-xs">Transactions.csv</code>{" "}
-          per le operazioni o{" "}
-          <code className="rounded bg-muted px-1.5 py-0.5 text-xs">Account.csv</code> per i
-          dividendi.
+        <h1 className="font-display text-3xl font-semibold tracking-tight md:text-4xl">
+          Importa CSV
+        </h1>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Carica <code className="rounded-md bg-secondary px-1.5 py-0.5 text-xs">Transactions.csv</code>{" "}
+          o <code className="rounded-md bg-secondary px-1.5 py-0.5 text-xs">Account.csv</code> da
+          DEGIRO.
         </p>
       </div>
 
-      <Card className="border-2 border-dashed border-border bg-card p-10 text-center">
+      <Card className="card-soft border-2 border-dashed border-border p-10 text-center">
         <input
           id="file-input"
           type="file"
@@ -110,16 +111,17 @@ function ImportPage() {
           className="hidden"
         />
         <label htmlFor="file-input" className="cursor-pointer">
-          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/15">
-            <Upload className="h-6 w-6 text-primary" />
-          </div>
-          <p className="mt-4 font-semibold">Trascina o seleziona un file CSV</p>
-          <p className="mt-1 text-xs text-muted-foreground">Max 10MB · CSV DEGIRO</p>
-          <Button
-            type="button"
-            asChild
-            className="mt-5 bg-primary text-primary-foreground hover:opacity-90"
+          <motion.div
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            className="mx-auto flex h-16 w-16 items-center justify-center rounded-3xl"
+            style={{ background: "var(--gradient-mint)", boxShadow: "var(--shadow-mint)" }}
           >
+            <Upload className="h-7 w-7 text-primary-foreground" />
+          </motion.div>
+          <p className="mt-5 font-display text-lg font-semibold">Trascina o seleziona il CSV</p>
+          <p className="mt-1 text-xs text-muted-foreground">Max 10MB · Italiano o inglese</p>
+          <Button type="button" asChild className="mt-5">
             <span>
               {parsing && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Scegli file
@@ -129,54 +131,64 @@ function ImportPage() {
       </Card>
 
       {result && (
-        <Card className="border-border bg-card p-6">
-          <div className="flex items-start gap-4">
-            <FileText className="h-8 w-8 shrink-0 text-primary" />
-            <div className="flex-1">
-              <p className="font-semibold capitalize">File: {result.detected}</p>
-              <div className="mt-2 grid grid-cols-2 gap-4 text-sm">
-                <div>
-                  <p className="text-muted-foreground">Transazioni</p>
-                  <p className="text-2xl font-bold tabular-nums">
-                    {result.transactions.length}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-muted-foreground">Dividendi</p>
-                  <p className="text-2xl font-bold tabular-nums">{result.dividends.length}</p>
-                </div>
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4 }}
+        >
+          <Card className="card-soft p-6">
+            <div className="flex items-start gap-4">
+              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-mint-soft text-primary-foreground">
+                <FileText className="h-5 w-5" />
               </div>
-              {result.errors.length > 0 && (
-                <p className="mt-2 text-xs text-warning">
-                  {result.errors.length} avvisi durante il parsing
-                </p>
-              )}
-              {imported ? (
-                <div className="mt-4 flex items-center gap-2 rounded-lg bg-success/15 p-3 text-sm text-success">
-                  <CheckCircle2 className="h-4 w-4" />
-                  Importate {imported.inserted} righe · {imported.skipped} duplicate ignorate
+              <div className="flex-1">
+                <p className="font-display font-semibold capitalize">File: {result.detected}</p>
+                <div className="mt-3 grid grid-cols-2 gap-4 text-sm">
+                  <div className="rounded-2xl bg-secondary/60 p-3">
+                    <p className="text-xs text-muted-foreground">Transazioni</p>
+                    <p className="mt-1 font-display text-2xl font-semibold tabular-nums">
+                      {result.transactions.length}
+                    </p>
+                  </div>
+                  <div className="rounded-2xl bg-secondary/60 p-3">
+                    <p className="text-xs text-muted-foreground">Dividendi</p>
+                    <p className="mt-1 font-display text-2xl font-semibold tabular-nums">
+                      {result.dividends.length}
+                    </p>
+                  </div>
                 </div>
-              ) : (
-                <Button
-                  onClick={doImport}
-                  disabled={
-                    importing ||
-                    (result.transactions.length === 0 && result.dividends.length === 0)
-                  }
-                  className="mt-4 bg-primary text-primary-foreground hover:opacity-90"
-                >
-                  {importing && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                  Importa nel portafoglio
-                </Button>
-              )}
+                {result.errors.length > 0 && (
+                  <p className="mt-2 text-xs text-warning">
+                    {result.errors.length} avvisi durante il parsing
+                  </p>
+                )}
+                {imported ? (
+                  <div className="mt-4 flex items-center gap-2 rounded-2xl bg-mint-soft p-3 text-sm font-medium text-primary-foreground">
+                    <CheckCircle2 className="h-4 w-4" />
+                    Importate {imported.inserted} righe · {imported.skipped} duplicate ignorate
+                  </div>
+                ) : (
+                  <Button
+                    onClick={doImport}
+                    disabled={
+                      importing ||
+                      (result.transactions.length === 0 && result.dividends.length === 0)
+                    }
+                    className="mt-4"
+                  >
+                    {importing && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                    Importa nel portafoglio
+                  </Button>
+                )}
+              </div>
             </div>
-          </div>
-        </Card>
+          </Card>
+        </motion.div>
       )}
 
-      <Card className="border-border bg-card p-5">
-        <h3 className="font-semibold">Come esportare da DEGIRO</h3>
-        <ol className="mt-2 list-decimal space-y-1 pl-5 text-sm text-muted-foreground">
+      <Card className="card-soft p-6">
+        <h3 className="font-display text-lg font-semibold">Come esportare da DEGIRO</h3>
+        <ol className="mt-3 list-decimal space-y-1.5 pl-5 text-sm text-muted-foreground">
           <li>Accedi a DEGIRO → menu Attività → Transazioni o Account</li>
           <li>Scegli intervallo date, clicca "Esporta" → CSV</li>
           <li>Carica qui il file. Riconosciamo automaticamente il tipo</li>
