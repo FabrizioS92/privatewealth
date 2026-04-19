@@ -30,18 +30,18 @@ export const Route = createRootRoute({
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Lovable App" },
+      { title: "Private Wealth" },
       { name: "description", content: "Create a fintech app from CSV files for investment portfolio tracking and analysis." },
       { name: "author", content: "Lovable" },
-      { property: "og:title", content: "Lovable App" },
+      { property: "og:title", content: "Private Wealth" },
       { property: "og:description", content: "Create a fintech app from CSV files for investment portfolio tracking and analysis." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
       { name: "twitter:site", content: "@Lovable" },
-      { name: "twitter:title", content: "Lovable App" },
+      { name: "twitter:title", content: "Private Wealth" },
       { name: "twitter:description", content: "Create a fintech app from CSV files for investment portfolio tracking and analysis." },
-      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/494e9d2d-70fa-4120-a46c-3c5ba1a52c37/id-preview-3c017084--2f28eb26-b33c-4906-b0e8-746a7ca6f665.lovable.app-1776522239655.png" },
-      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/494e9d2d-70fa-4120-a46c-3c5ba1a52c37/id-preview-3c017084--2f28eb26-b33c-4906-b0e8-746a7ca6f665.lovable.app-1776522239655.png" },
+      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/b6ea1664-a15f-433a-8a55-81abb05e773a/id-preview-ec65732e--e474e650-3f33-48d9-a2e5-2d9b33ddcde3.lovable.app-1776584382007.png" },
+      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/b6ea1664-a15f-433a-8a55-81abb05e773a/id-preview-ec65732e--e474e650-3f33-48d9-a2e5-2d9b33ddcde3.lovable.app-1776584382007.png" },
     ],
     links: [
       {
