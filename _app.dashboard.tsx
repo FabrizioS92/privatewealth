@@ -5,6 +5,7 @@ import { ArrowUpRight, Coins, PieChart, Sparkles, TrendingUp, Upload, Wallet } f
 import { Link } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
+import { useI18n } from "@/lib/i18n";
 import { KpiCard } from "@/components/kpi-card";
 import { CountUp } from "@/components/count-up";
 import { PerformanceChart } from "@/components/performance-chart";
@@ -28,6 +29,7 @@ interface ManualPrice {
 
 function Dashboard() {
   const { user } = useAuth();
+  const { t } = useI18n();
   const [loading, setLoading] = useState(true);
   const [transactions, setTransactions] = useState<ParsedTransaction[]>([]);
   const [prices, setPrices] = useState<Record<string, number>>({});
@@ -41,18 +43,13 @@ function Dashboard() {
         { data: pricesData, error: priceErr },
         { data: divs, error: divErr },
       ] = await Promise.all([
-        supabase
-          .from("transactions")
-          .select("*")
-          .eq("user_id", user.id)
-          .order("trade_date", { ascending: true }),
+        supabase.from("transactions").select("*").eq("user_id", user.id).order("trade_date", { ascending: true }),
         supabase.from("manual_prices").select("isin,price").eq("user_id", user.id),
         supabase.from("dividends").select("net_amount").eq("user_id", user.id),
       ]);
 
-      // FIX: gestione errori su tutte le query
       if (txErr || priceErr || divErr) {
-        console.error("Errore caricamento dati:", txErr ?? priceErr ?? divErr);
+        console.error(t("error_loading_data"), txErr ?? priceErr ?? divErr);
         setLoading(false);
         return;
       }
@@ -68,9 +65,7 @@ function Dashboard() {
         })) as unknown as ParsedTransaction[],
       );
       const pmap: Record<string, number> = {};
-      (pricesData as ManualPrice[] | null)?.forEach((p) => {
-        pmap[p.isin] = Number(p.price);
-      });
+      (pricesData as ManualPrice[] | null)?.forEach((p) => { pmap[p.isin] = Number(p.price); });
       setPrices(pmap);
       setDividendsTotal((divs ?? []).reduce((s, d) => s + Number(d.net_amount), 0));
       setLoading(false);
@@ -95,26 +90,15 @@ function Dashboard() {
   const allocation = useMemo(
     () =>
       positions
-        .map((p) => ({
-          name: p.name,
-          isin: p.isin,
-          value: p.quantity * (prices[p.isin] ?? p.avg_cost),
-        }))
+        .map((p) => ({ name: p.name, isin: p.isin, value: p.quantity * (prices[p.isin] ?? p.avg_cost) }))
         .sort((a, b) => b.value - a.value),
     [positions, prices],
   );
 
-  // FIX: il grafico mostrava il flusso di cassa investito (qty*price per ogni tx),
-  // non il valore di mercato nel tempo. Ora calcola il valore corrente delle posizioni
-  // aperte ad ogni data, usando i prezzi manuali quando disponibili.
   const performance = useMemo(() => {
     if (transactions.length === 0) return [];
-
-    // Raccogliamo tutte le date uniche in ordine cronologico
     const dates = Array.from(new Set(transactions.map((tx) => tx.trade_date))).sort();
-
     return dates.map((date) => {
-      // Transazioni fino a questa data inclusa
       const txsUpToDate = transactions.filter((tx) => tx.trade_date <= date);
       const positionsAtDate = computePositions(txsUpToDate);
       const marketValue = positionsAtDate.reduce((sum, p) => {
@@ -152,15 +136,15 @@ function Dashboard() {
           <Sparkles className="h-9 w-9 text-primary-foreground" />
         </motion.div>
         <h2 className="mt-7 font-display text-3xl font-semibold tracking-tight">
-          Benvenuto su Folio
+          {t("dashboard_empty_title")}
         </h2>
         <p className="mt-3 max-w-md text-sm leading-relaxed text-muted-foreground">
-          Importa il tuo primo CSV DEGIRO per vedere portafoglio, performance e dividendi.
+          {t("dashboard_empty_desc")}
         </p>
         <Button asChild className="mt-7 h-12 px-7">
           <Link to="/import">
             <Upload className="mr-2 h-4 w-4" />
-            Importa CSV DEGIRO
+            {t("dashboard_import_btn")}
           </Link>
         </Button>
       </div>
@@ -177,44 +161,31 @@ function Dashboard() {
       >
         <p className="text-xs font-medium text-muted-foreground">{formatDate(new Date())}</p>
         <h1 className="font-display text-3xl font-semibold tracking-tight md:text-4xl">
-          Buongiorno 👋
+          {t("dashboard_greeting")}
         </h1>
       </motion.div>
 
-      {/* Hero balance card */}
       <motion.div
         initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, ease: [0.2, 0.8, 0.2, 1] }}
         className="card-ink relative overflow-hidden rounded-3xl p-7 md:p-9"
       >
-        <span
-          className="pointer-events-none absolute -right-16 -top-16 h-48 w-48 rounded-full opacity-60 blur-3xl"
-          style={{ background: "var(--gradient-mint)" }}
-        />
-        <span
-          className="pointer-events-none absolute -bottom-20 -left-10 h-44 w-44 rounded-full opacity-30 blur-3xl"
-          style={{ background: "var(--gradient-card-coral)" }}
-        />
+        <span className="pointer-events-none absolute -right-16 -top-16 h-48 w-48 rounded-full opacity-60 blur-3xl" style={{ background: "var(--gradient-mint)" }} />
+        <span className="pointer-events-none absolute -bottom-20 -left-10 h-44 w-44 rounded-full opacity-30 blur-3xl" style={{ background: "var(--gradient-card-coral)" }} />
         <div className="relative flex items-start justify-between">
           <div>
-            <p className="text-xs font-medium text-white/70">Valore portafoglio</p>
+            <p className="text-xs font-medium text-white/70">{t("dashboard_portfolio_value")}</p>
             <p className="mt-3 font-display text-5xl font-semibold tabular-nums tracking-tight md:text-6xl">
               <CountUp value={stats.marketValue} format={(n) => formatCurrency(n)} />
             </p>
             <div className="mt-4 flex flex-wrap items-center gap-2">
-              <span
-                className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold tabular-nums ${
-                  stats.pnl >= 0 ? "bg-mint/30 text-white" : "bg-coral/30 text-white"
-                }`}
-              >
+              <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold tabular-nums ${stats.pnl >= 0 ? "bg-mint/30 text-white" : "bg-coral/30 text-white"}`}>
                 <ArrowUpRight className={`h-3 w-3 ${stats.pnl < 0 ? "rotate-90" : ""}`} />
-                {stats.pnl >= 0 ? "+" : ""}
-                {stats.pnlPct.toFixed(2)}%
+                {stats.pnl >= 0 ? "+" : ""}{stats.pnlPct.toFixed(2)}%
               </span>
               <span className="text-xs text-white/60 tabular-nums">
-                {stats.pnl >= 0 ? "+" : ""}
-                {formatCurrency(stats.pnl)}
+                {stats.pnl >= 0 ? "+" : ""}{formatCurrency(stats.pnl)}
               </span>
             </div>
           </div>
@@ -225,30 +196,16 @@ function Dashboard() {
       </motion.div>
 
       <div className="grid gap-4 md:grid-cols-2">
-        <KpiCard
-          label="Investito"
-          value={formatCurrency(stats.invested)}
-          icon={<TrendingUp className="h-4 w-4" />}
-          index={0}
-        />
-        <KpiCard
-          label="Dividendi netti"
-          value={formatCurrency(dividendsTotal)}
-          icon={<Coins className="h-4 w-4" />}
-          index={1}
-        />
+        <KpiCard label={t("dashboard_invested")} value={formatCurrency(stats.invested)} icon={<TrendingUp className="h-4 w-4" />} index={0} />
+        <KpiCard label={t("dashboard_net_dividends")} value={formatCurrency(dividendsTotal)} icon={<Coins className="h-4 w-4" />} index={1} />
       </div>
 
-      <motion.div
-        initial={{ opacity: 0, y: 16 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5, delay: 0.2 }}
-      >
+      <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.2 }}>
         <Card className="card-soft p-5 md:p-6">
           <div className="mb-4 flex items-center justify-between">
             <div>
-              <p className="text-xs font-medium text-muted-foreground">Performance</p>
-              <h2 className="mt-1 font-display text-xl font-semibold">Capitale nel tempo</h2>
+              <p className="text-xs font-medium text-muted-foreground">{t("dashboard_performance_label")}</p>
+              <h2 className="mt-1 font-display text-xl font-semibold">{t("dashboard_capital_over_time")}</h2>
             </div>
             <div className="flex h-9 w-9 items-center justify-center rounded-2xl bg-mint-soft text-primary-foreground">
               <TrendingUp className="h-4 w-4" />
@@ -258,16 +215,12 @@ function Dashboard() {
         </Card>
       </motion.div>
 
-      <motion.div
-        initial={{ opacity: 0, y: 16 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5, delay: 0.3 }}
-      >
+      <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.3 }}>
         <Card className="card-soft p-5 md:p-6">
           <div className="mb-4 flex items-center justify-between">
             <div>
-              <p className="text-xs font-medium text-muted-foreground">Composizione</p>
-              <h2 className="mt-1 font-display text-xl font-semibold">Allocazione</h2>
+              <p className="text-xs font-medium text-muted-foreground">{t("dashboard_composition")}</p>
+              <h2 className="mt-1 font-display text-xl font-semibold">{t("dashboard_allocation")}</h2>
             </div>
             <div className="flex h-9 w-9 items-center justify-center rounded-2xl bg-peach text-ink">
               <PieChart className="h-4 w-4" />
