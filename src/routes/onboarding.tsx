@@ -131,26 +131,25 @@ function OnboardingPage() {
   return (
     <div className="relative flex min-h-screen items-center justify-center px-4 py-10">
       <div
-        className="pointer-events-none absolute left-1/2 top-1/3 h-[400px] w-[400px] -translate-x-1/2 rounded-full opacity-20 blur-[120px]"
-        style={{ background: "var(--gradient-gold)" }}
+        className="pointer-events-none absolute left-1/2 top-1/4 h-[500px] w-[500px] -translate-x-1/2 rounded-full opacity-40 blur-[120px]"
+        style={{ background: "var(--gradient-mint)" }}
       />
       <div className="relative z-10 w-full max-w-md">
-        <Card className="glass border-border p-8" style={{ boxShadow: "var(--shadow-elevated)" }}>
+        <Card className="card-soft p-8 md:p-10">
           <div
-            className="mx-auto flex h-14 w-14 items-center justify-center rounded-full border border-gold/30"
-            style={{ background: "var(--gradient-gold)" }}
+            className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl"
+            style={{ background: "var(--gradient-mint)", boxShadow: "var(--shadow-mint)" }}
           >
-            <Icon className="h-6 w-6 text-primary-foreground" />
+            <Icon className="h-7 w-7 text-primary-foreground" />
           </div>
           <div className="mt-6 text-center">
-            <p className="text-[10px] uppercase tracking-[0.3em] text-gold/80">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.25em] text-primary">
               Step {step + 1} / {STEPS.length}
             </p>
-            <h1 className="mt-3 font-serif text-2xl tracking-tight md:text-3xl">
+            <h1 className="mt-3 font-display text-2xl font-semibold tracking-tight md:text-3xl">
               {Current.title}
             </h1>
-            <div className="mx-auto mt-3 gold-divider w-12" />
-            <p className="mt-4 text-sm leading-relaxed text-muted-foreground">{Current.text}</p>
+            <p className="mt-3 text-sm leading-relaxed text-muted-foreground">{Current.text}</p>
           </div>
 
           <div className="mt-6 flex justify-center gap-1.5">
@@ -158,14 +157,14 @@ function OnboardingPage() {
               <div
                 key={i}
                 className={`h-[3px] rounded-full transition-all duration-500 ${
-                  i === step ? "w-10 bg-gold" : "w-2 bg-muted"
+                  i === step ? "w-10 bg-primary" : "w-2 bg-muted"
                 }`}
               />
             ))}
           </div>
 
           <div className="mt-7 space-y-2">
-            <Button onClick={next} variant="luxury" className="w-full rounded-full">
+            <Button onClick={next} className="w-full">
               {step < STEPS.length - 1 ? "Avanti" : "Importa CSV"}
               <ArrowRight className="ml-1 h-4 w-4" />
             </Button>
@@ -173,8 +172,8 @@ function OnboardingPage() {
               <Button
                 onClick={loadDemo}
                 disabled={loadingDemo}
-                variant="gold"
-                className="w-full rounded-full"
+                variant="outline"
+                className="w-full"
               >
                 {loadingDemo && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 Esplora con dati demo

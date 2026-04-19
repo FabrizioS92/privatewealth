@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
+import { motion } from "framer-motion";
 import { ArrowDownRight, ArrowUpRight } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
@@ -51,56 +52,65 @@ function TransactionsPage() {
     })();
   }, [user]);
 
-  if (loading) return <Skeleton className="h-96" />;
+  if (loading) return <Skeleton className="h-96 rounded-3xl" />;
 
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold md:text-3xl">Movimenti</h1>
-        <p className="text-sm text-muted-foreground">{txs.length} operazioni totali</p>
+        <h1 className="font-display text-3xl font-semibold tracking-tight md:text-4xl">
+          Movimenti
+        </h1>
+        <p className="mt-1 text-sm text-muted-foreground">{txs.length} operazioni totali</p>
       </div>
 
       {txs.length === 0 ? (
-        <Card className="border-border bg-card p-10 text-center text-muted-foreground">
+        <Card className="card-soft p-10 text-center text-muted-foreground">
           Nessuna operazione importata.
         </Card>
       ) : (
-        <div className="space-y-2">
-          {txs.map((t) => {
+        <div className="space-y-2.5">
+          {txs.map((t, i) => {
             const isBuy = t.type === "buy";
             return (
-              <Card key={t.id} className="border-border bg-card p-4">
-                <div className="flex items-center gap-3">
-                  <div
-                    className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg ${
-                      isBuy ? "bg-success/15 text-success" : "bg-destructive/15 text-destructive"
-                    }`}
-                  >
-                    {isBuy ? (
-                      <ArrowDownRight className="h-4 w-4" />
-                    ) : (
-                      <ArrowUpRight className="h-4 w-4" />
-                    )}
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-medium">{t.name}</p>
-                    <p className="text-[11px] text-muted-foreground">
-                      {formatDate(t.trade_date)} · {isBuy ? "Acquisto" : "Vendita"} ·{" "}
-                      {formatNumber(t.quantity, 4)} @ {formatCurrency(t.price, t.currency)}
-                    </p>
-                  </div>
-                  <div className="text-right">
-                    <p
-                      className={`text-sm font-semibold tabular-nums ${
-                        isBuy ? "text-foreground" : "text-success"
+              <motion.div
+                key={t.id}
+                initial={{ opacity: 0, y: 6 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.3, delay: Math.min(i, 10) * 0.025 }}
+              >
+                <Card className="card-soft p-4">
+                  <div className="flex items-center gap-3">
+                    <div
+                      className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl ${
+                        isBuy ? "bg-mint-soft text-primary-foreground" : "bg-coral/15 text-coral"
                       }`}
                     >
-                      {isBuy ? "−" : "+"}
-                      {formatCurrency(Math.abs(t.total), t.currency)}
-                    </p>
+                      {isBuy ? (
+                        <ArrowDownRight className="h-5 w-5" />
+                      ) : (
+                        <ArrowUpRight className="h-5 w-5" />
+                      )}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-sm font-semibold">{t.name}</p>
+                      <p className="text-[11px] text-muted-foreground">
+                        {formatDate(t.trade_date)} · {isBuy ? "Acquisto" : "Vendita"} ·{" "}
+                        {formatNumber(t.quantity, 4)} @ {formatCurrency(t.price, t.currency)}
+                      </p>
+                    </div>
+                    <div className="text-right">
+                      <p
+                        className={`font-display text-sm font-semibold tabular-nums ${
+                          isBuy ? "text-foreground" : "text-success"
+                        }`}
+                      >
+                        {isBuy ? "−" : "+"}
+                        {formatCurrency(Math.abs(t.total), t.currency)}
+                      </p>
+                    </div>
                   </div>
-                </div>
-              </Card>
+                </Card>
+              </motion.div>
             );
           })}
         </div>
