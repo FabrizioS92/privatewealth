@@ -2,29 +2,55 @@
  * Formatters per UI fintech.
  */
 
+function normalizeCurrencyCode(currency?: string): string {
+  const code = currency?.trim().toUpperCase();
+  return /^[A-Z]{3}$/.test(code ?? "") ? code! : "EUR";
+}
+
 export function formatCurrency(
   value: number,
   currency: string = "EUR",
   options: Intl.NumberFormatOptions = {},
 ): string {
   if (!Number.isFinite(value)) return "—";
-  return new Intl.NumberFormat("it-IT", {
-    style: "currency",
-    currency,
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-    ...options,
-  }).format(value);
+
+  try {
+    return new Intl.NumberFormat("it-IT", {
+      style: "currency",
+      currency: normalizeCurrencyCode(currency),
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+      ...options,
+    }).format(value);
+  } catch {
+    return new Intl.NumberFormat("it-IT", {
+      style: "currency",
+      currency: "EUR",
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+      ...options,
+    }).format(value);
+  }
 }
 
 export function formatCompactCurrency(value: number, currency: string = "EUR"): string {
   if (!Number.isFinite(value)) return "—";
-  return new Intl.NumberFormat("it-IT", {
-    style: "currency",
-    currency,
-    notation: "compact",
-    maximumFractionDigits: 1,
-  }).format(value);
+
+  try {
+    return new Intl.NumberFormat("it-IT", {
+      style: "currency",
+      currency: normalizeCurrencyCode(currency),
+      notation: "compact",
+      maximumFractionDigits: 1,
+    }).format(value);
+  } catch {
+    return new Intl.NumberFormat("it-IT", {
+      style: "currency",
+      currency: "EUR",
+      notation: "compact",
+      maximumFractionDigits: 1,
+    }).format(value);
+  }
 }
 
 export function formatPercent(value: number, fractionDigits: number = 2): string {

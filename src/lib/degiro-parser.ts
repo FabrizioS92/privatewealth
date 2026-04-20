@@ -65,6 +65,35 @@ function parseDateDDMMYYYY(v: string): string {
   return `${y.padStart(4, "0")}-${m.padStart(2, "0")}-${d.padStart(2, "0")}`;
 }
 
+function normalizeCurrency(value: string | undefined | null): string {
+  const code = String(value ?? "")
+    .trim()
+    .toUpperCase()
+    .replace(/[^A-Z]/g, "")
+    .slice(0, 3);
+
+  return /^[A-Z]{3}$/.test(code) ? code : "EUR";
+}
+
+function pickCurrency(row: Record<string, string>, keys: string[]): string {
+  for (const key of keys) {
+    const value = pick(row, [key]);
+    const normalized = normalizeCurrency(value);
+    if (normalized !== "EUR" || normalizeCurrency(value || undefined) === "EUR") {
+      if (String(value ?? "").trim()) return normalized;
+    }
+  }
+
+  for (const value of Object.values(row)) {
+    const normalized = normalizeCurrency(value);
+    if (/^[A-Z]{3}$/.test(String(value ?? "").trim().toUpperCase())) {
+      return normalized;
+    }
+  }
+
+  return "EUR";
+}
+
 async function sha256(input: string): Promise<string> {
   if (typeof crypto !== "undefined" && crypto.subtle) {
     const buf = new TextEncoder().encode(input);
@@ -117,16 +146,7 @@ async function parseTransactionRow(row: Record<string, string>): Promise<ParsedT
     pick(row, ["Beurs", "Venue", "Exchange", "Borsa", "Borsa di riferimento"]).trim() || null;
   const qtyRaw = pick(row, ["Aantal", "Quantity", "Quantità", "Quantita"]);
   const priceRaw = pick(row, ["Koers", "Price", "Quotazione"]);
-  // currency: prefer explicit currency col; DEGIRO IT puts it in unnamed col next to "Quotazione"/"Valore locale"
-  const currency =
-    (
-      pick(row, ["Mutatie", "Currency", "Valuta", "Divisa"]) ||
-      pick(row, ["Valore locale"]) ||
-      "EUR"
-    )
-      .trim()
-      .toUpperCase()
-      .slice(0, 3);
+  const currency = pickCurrency(row, ["Mutatie", "Currency", "Valuta", "Divisa", "Valore locale"]);
   const feesRaw =
     pick(row, [
       "Transactiekosten en/of",
@@ -149,7 +169,11 @@ async function parseTransactionRow(row: Record<string, string>): Promise<ParsedT
   const fx = normalizeNumber(fxRaw) || 1;
   const total = normalizeNumber(totalRaw) || (type === "buy" ? -(absQty * price + fees) : absQty * price - fees);
 
-  const trade_date = parseDateDDMMYYYY(dateRaw) || new Date(dateRaw).toISOString().slice(0, 10);
+  const parsedTradeDate = parseDateDDMMYYYY(dateRaw);
+  const fallbackDate = new Date(dateRaw);
+  const trade_date = parsedTradeDate || (Number.isNaN(fallbackDate.getTime()) ? "" : fallbackDate.toISOString().slice(0, 10));
+  if (!trade_date) return null;
+
   const dedupKey = `${trade_date}|${isin}|${absQty.toFixed(6)}|${price.toFixed(6)}|${type}`;
   const dedup_hash = await sha256(dedupKey);
 
@@ -189,18 +213,18 @@ async function parseAccountRows(rows: Record<string, string>[]): Promise<ParsedD
     const desc = pick(row, ["Omschrijving", "Description", "Descrizione"]);
     const isin = pick(row, ["ISIN"]).trim().toUpperCase();
     const name = pick(row, ["Product", "Producto", "Prodotto"]).trim();
-    const currency =
-      (pick(row, ["Mutatie", "Currency", "Valuta", "Divisa"]) || "EUR")
-        .trim()
-        .toUpperCase()
-        .slice(0, 3);
+    const currency = pickCurrency(row, ["Mutatie", "Currency", "Valuta", "Divisa"]);
     const amountRaw = pick(row, ["", "Bedrag", "Amount", "Importo"]);
     const amount = normalizeNumber(amountRaw);
 
     if (!isin || !dateRaw || !desc) continue;
     if (!DIV_KEYWORDS.test(desc) && !TAX_KEYWORDS.test(desc)) continue;
 
-    const date = parseDateDDMMYYYY(dateRaw) || new Date(dateRaw).toISOString().slice(0, 10);
+    const parsedDate = parseDateDDMMYYYY(dateRaw);
+    const fallbackDate = new Date(dateRaw);
+    const date = parsedDate || (Number.isNaN(fallbackDate.getTime()) ? "" : fallbackDate.toISOString().slice(0, 10));
+    if (!date) continue;
+
     const key = `${isin}|${date}`;
     const entry = grouped.get(key) ?? {
       gross: 0,
