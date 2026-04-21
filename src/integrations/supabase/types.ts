@@ -89,6 +89,33 @@ export type Database = {
         }
         Relationships: []
       }
+      price_history: {
+        Row: {
+          currency: string
+          id: string
+          isin: string
+          price: number
+          recorded_at: string
+          user_id: string
+        }
+        Insert: {
+          currency?: string
+          id?: string
+          isin: string
+          price: number
+          recorded_at?: string
+          user_id: string
+        }
+        Update: {
+          currency?: string
+          id?: string
+          isin?: string
+          price?: number
+          recorded_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           base_currency: string

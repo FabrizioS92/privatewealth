@@ -52,10 +52,10 @@ function Landing() {
         </div>
         <div className="flex items-center gap-2">
           <Button variant="ghost" size="sm" asChild>
-            <Link to="/auth">Accedi</Link>
+            <Link to="/auth" search={{ demo: undefined }}>Accedi</Link>
           </Button>
           <Button size="sm" asChild>
-            <Link to="/auth">
+            <Link to="/auth" search={{ demo: undefined }}>
               Inizia <ArrowRight className="ml-1 h-3.5 w-3.5" />
             </Link>
           </Button>
@@ -91,7 +91,7 @@ function Landing() {
           </p>
           <div className="mt-9 flex flex-col items-center justify-center gap-3 sm:flex-row">
             <Button size="lg" asChild className="h-12 px-7 text-base">
-              <Link to="/auth">
+              <Link to="/auth" search={{ demo: undefined }}>
                 Inizia gratis <ArrowRight className="ml-2 h-4 w-4" />
               </Link>
             </Button>
