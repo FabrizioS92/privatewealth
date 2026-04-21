@@ -127,7 +127,7 @@ function PortfolioPage() {
           Portafoglio
         </h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          {positions.length} posizioni · Tocca per aggiornare il prezzo
+          {positions.length} posizioni · Prezzi sincronizzati automaticamente all'ultimo import CSV
         </p>
       </div>
 
