@@ -52,10 +52,10 @@ function Landing() {
         </div>
         <div className="flex items-center gap-2">
           <Button variant="ghost" size="sm" asChild>
-            <Link to="/auth">Accedi</Link>
+            <Link to="/auth" search={{}}>Accedi</Link>
           </Button>
           <Button size="sm" asChild>
-            <Link to="/auth">
+            <Link to="/auth" search={{}}>
               Inizia <ArrowRight className="ml-1 h-3.5 w-3.5" />
             </Link>
           </Button>
