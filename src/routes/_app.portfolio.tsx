@@ -193,6 +193,26 @@ function PortfolioPage() {
                         {positive ? "+" : ""}
                         {formatPercent(pnlPct, 2)}
                       </p>
+                      {priceDeltas[p.isin] && (
+                        <p
+                          className={`mt-1 inline-flex items-center gap-1 text-[10px] font-medium tabular-nums ${
+                            priceDeltas[p.isin].pct > 0
+                              ? "text-emerald-600"
+                              : priceDeltas[p.isin].pct < 0
+                                ? "text-rose-600"
+                                : "text-muted-foreground"
+                          }`}
+                          title={`Da ${formatCurrency(priceDeltas[p.isin].prev, p.currency)} a ${formatCurrency(priceDeltas[p.isin].curr, p.currency)}`}
+                        >
+                          {priceDeltas[p.isin].pct > 0 ? (
+                            <TrendingUp className="h-2.5 w-2.5" />
+                          ) : priceDeltas[p.isin].pct < 0 ? (
+                            <TrendingDown className="h-2.5 w-2.5" />
+                          ) : null}
+                          Δ {priceDeltas[p.isin].pct > 0 ? "+" : ""}
+                          {formatPercent(priceDeltas[p.isin].pct, 2)}
+                        </p>
+                      )}
                       <Button
                         variant="ghost"
                         size="sm"
