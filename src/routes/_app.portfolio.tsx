@@ -32,18 +32,25 @@ function PortfolioPage() {
   const [loading, setLoading] = useState(true);
   const [transactions, setTransactions] = useState<ParsedTransaction[]>([]);
   const [prices, setPrices] = useState<Record<string, number>>({});
+  const [priceDeltas, setPriceDeltas] = useState<Record<string, { pct: number; prev: number; curr: number }>>({});
   const [editing, setEditing] = useState<Position | null>(null);
   const [editPrice, setEditPrice] = useState("");
 
   const load = async () => {
     if (!user) return;
-    const [{ data: txs }, { data: pricesData }] = await Promise.all([
+    const [{ data: txs }, { data: pricesData }, { data: history }] = await Promise.all([
       supabase
         .from("transactions")
         .select("*")
         .eq("user_id", user.id)
         .order("trade_date", { ascending: true }),
       supabase.from("manual_prices").select("isin,price").eq("user_id", user.id),
+      supabase
+        .from("price_history")
+        .select("isin,price,recorded_at")
+        .eq("user_id", user.id)
+        .order("recorded_at", { ascending: false })
+        .limit(2000),
     ]);
     setTransactions(
       (txs ?? []).map((t) => ({
@@ -60,6 +67,21 @@ function PortfolioPage() {
       pmap[p.isin] = Number(p.price);
     });
     setPrices(pmap);
+
+    // delta dell'ultimo import: per ogni ISIN, confronto le 2 righe più recenti
+    const grouped = new Map<string, number[]>();
+    (history ?? []).forEach((h) => {
+      const arr = grouped.get(h.isin) ?? [];
+      arr.push(Number(h.price));
+      grouped.set(h.isin, arr);
+    });
+    const deltas: Record<string, { pct: number; prev: number; curr: number }> = {};
+    grouped.forEach((arr, isin) => {
+      if (arr.length >= 2 && arr[1] > 0) {
+        deltas[isin] = { pct: (arr[0] - arr[1]) / arr[1], prev: arr[1], curr: arr[0] };
+      }
+    });
+    setPriceDeltas(deltas);
     setLoading(false);
   };
 
