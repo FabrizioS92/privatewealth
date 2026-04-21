@@ -9,12 +9,14 @@ import { KpiCard } from "@/components/kpi-card";
 import { CountUp } from "@/components/count-up";
 import { PerformanceChart } from "@/components/performance-chart";
 import { AllocationDonut } from "@/components/allocation-donut";
+import { RangeSelector } from "@/components/range-selector";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { formatCurrency, formatDate } from "@/lib/format";
 import type { ParsedTransaction } from "@/lib/degiro-parser";
 import { computePositions } from "@/lib/degiro-parser";
+import { computePortfolioHistory, type PriceHistoryRow, type RangeKey } from "@/lib/portfolio-history";
 
 export const Route = createFileRoute("/_app/dashboard")({
   head: () => ({ meta: [{ title: "Home — Folio" }] }),
@@ -31,12 +33,14 @@ function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [transactions, setTransactions] = useState<ParsedTransaction[]>([]);
   const [prices, setPrices] = useState<Record<string, number>>({});
+  const [priceHistory, setPriceHistory] = useState<PriceHistoryRow[]>([]);
   const [dividendsTotal, setDividendsTotal] = useState(0);
+  const [range, setRange] = useState<RangeKey>("6M");
 
   useEffect(() => {
     if (!user) return;
     void (async () => {
-      const [{ data: txs }, { data: pricesData }, { data: divs }] = await Promise.all([
+      const [{ data: txs }, { data: pricesData }, { data: divs }, { data: phData }] = await Promise.all([
         supabase
           .from("transactions")
           .select("*")
@@ -44,6 +48,11 @@ function Dashboard() {
           .order("trade_date", { ascending: true }),
         supabase.from("manual_prices").select("isin,price").eq("user_id", user.id),
         supabase.from("dividends").select("net_amount").eq("user_id", user.id),
+        supabase
+          .from("price_history")
+          .select("isin,price,recorded_at")
+          .eq("user_id", user.id)
+          .order("recorded_at", { ascending: true }),
       ]);
 
       setTransactions(
@@ -61,6 +70,13 @@ function Dashboard() {
         pmap[p.isin] = Number(p.price);
       });
       setPrices(pmap);
+      setPriceHistory(
+        (phData ?? []).map((r) => ({
+          isin: r.isin,
+          price: Number(r.price),
+          recorded_at: String(r.recorded_at),
+        })),
+      );
       setDividendsTotal((divs ?? []).reduce((s, d) => s + Number(d.net_amount), 0));
       setLoading(false);
     })();
@@ -93,17 +109,19 @@ function Dashboard() {
     [positions, prices],
   );
 
-  const performance = useMemo(() => {
-    if (transactions.length === 0) return [];
-    const byDate = new Map<string, number>();
-    let cum = 0;
-    for (const tx of transactions) {
-      const sign = tx.type === "buy" ? 1 : -1;
-      cum += sign * tx.quantity * tx.price;
-      byDate.set(tx.trade_date, cum);
-    }
-    return Array.from(byDate.entries()).map(([date, value]) => ({ date, value }));
-  }, [transactions]);
+  const performance = useMemo(
+    () => computePortfolioHistory(transactions, priceHistory, prices, range),
+    [transactions, priceHistory, prices, range],
+  );
+
+  const periodChange = useMemo(() => {
+    if (performance.length < 2) return { abs: 0, pct: 0 };
+    const first = performance[0].value;
+    const last = performance[performance.length - 1].value;
+    const abs = last - first;
+    const pct = first > 0 ? (abs / first) * 100 : 0;
+    return { abs, pct };
+  }, [performance]);
 
   if (loading) {
     return (
@@ -225,16 +243,36 @@ function Dashboard() {
         transition={{ duration: 0.5, delay: 0.2 }}
       >
         <Card className="card-soft p-5 md:p-6">
-          <div className="mb-4 flex items-center justify-between">
+          <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
             <div>
               <p className="text-xs font-medium text-muted-foreground">Performance</p>
-              <h2 className="mt-1 font-display text-xl font-semibold">Capitale nel tempo</h2>
+              <h2 className="mt-1 font-display text-xl font-semibold">Performance portafoglio</h2>
+              <div className="mt-2 flex flex-wrap items-center gap-2">
+                <span
+                  className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold tabular-nums ${
+                    periodChange.abs >= 0 ? "bg-mint-soft text-ink" : "bg-coral/20 text-ink"
+                  }`}
+                >
+                  {periodChange.abs >= 0 ? "+" : ""}
+                  {periodChange.pct.toFixed(2)}%
+                </span>
+                <span className="text-xs text-muted-foreground tabular-nums">
+                  {periodChange.abs >= 0 ? "+" : ""}
+                  {formatCurrency(periodChange.abs)}
+                </span>
+              </div>
             </div>
             <div className="flex h-9 w-9 items-center justify-center rounded-2xl bg-mint-soft text-primary-foreground">
               <TrendingUp className="h-4 w-4" />
             </div>
           </div>
+          <div className="mb-3 -mx-1 overflow-x-auto">
+            <RangeSelector value={range} onChange={setRange} />
+          </div>
           <PerformanceChart data={performance} />
+          <p className="mt-3 text-[11px] leading-relaxed text-muted-foreground">
+            Storico basato sui prezzi rilevati negli import CSV. Più CSV importi, più la curva sarà ricca di punti reali.
+          </p>
         </Card>
       </motion.div>
 
