@@ -126,6 +126,12 @@ function Dashboard() {
     return { abs, pct };
   }, [performance]);
 
+  const rebalancing = useMemo(() => {
+    const target = computeTargetAllocation(transactions);
+    if (Object.keys(target).length === 0) return null;
+    return buildRebalancingRows(positions, prices, target);
+  }, [transactions, positions, prices]);
+
   if (loading) {
     return (
       <div className="space-y-4">
