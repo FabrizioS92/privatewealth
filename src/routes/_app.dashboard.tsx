@@ -1,7 +1,7 @@
 import { useEffect, useState, useMemo } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { motion } from "framer-motion";
-import { ArrowUpRight, Coins, PieChart, Sparkles, TrendingUp, Upload, Wallet } from "lucide-react";
+import { ArrowUpRight, Coins, PieChart, Scale, Sparkles, TrendingUp, Upload, Wallet } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
@@ -17,6 +17,8 @@ import { formatCurrency, formatDate } from "@/lib/format";
 import type { ParsedTransaction } from "@/lib/degiro-parser";
 import { computePositions } from "@/lib/degiro-parser";
 import { computePortfolioHistory, type PriceHistoryRow, type RangeKey } from "@/lib/portfolio-history";
+import { RebalancingTable } from "@/components/rebalancing-table";
+import { buildRebalancingRows, computeTargetAllocation } from "@/lib/rebalancing";
 
 export const Route = createFileRoute("/_app/dashboard")({
   head: () => ({ meta: [{ title: "Home — Folio" }] }),
@@ -63,6 +65,7 @@ function Dashboard() {
           fees: Number(t.fees),
           total: Number(t.total),
           fx_rate: Number(t.fx_rate ?? 1),
+          created_at: t.created_at,
         })) as unknown as ParsedTransaction[],
       );
       const pmap: Record<string, number> = {};
