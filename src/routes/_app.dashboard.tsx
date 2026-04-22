@@ -311,6 +311,30 @@ function Dashboard() {
         </Card>
       </motion.div>
 
+      <motion.div
+        initial={{ opacity: 0, y: 16 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, delay: 0.35 }}
+      >
+        <Card className="card-soft p-5 md:p-6">
+          <div className="mb-4 flex items-center justify-between">
+            <div>
+              <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                Geografia
+              </p>
+              <h2 className="mt-1 font-display text-xl font-semibold">Allocazione geografica</h2>
+              <p className="mt-1 text-xs text-muted-foreground">
+                Distribuzione per paese di emissione (codice ISIN)
+              </p>
+            </div>
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl bg-mint-soft text-primary-foreground">
+              <Globe2 className="h-4 w-4" />
+            </div>
+          </div>
+          <GeoAllocation data={geoAllocation} />
+        </Card>
+      </motion.div>
+
       {rebalancing && rebalancing.rows.length > 0 && (
         <motion.div
           initial={{ opacity: 0, y: 16 }}
