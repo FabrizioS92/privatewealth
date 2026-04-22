@@ -40,24 +40,27 @@ function Dashboard() {
   const [priceHistory, setPriceHistory] = useState<PriceHistoryRow[]>([]);
   const [dividendsTotal, setDividendsTotal] = useState(0);
   const [range, setRange] = useState<RangeKey>("6M");
+  const [breakdowns, setBreakdowns] = useState<BreakdownMap>({});
 
   useEffect(() => {
     if (!user) return;
     void (async () => {
-      const [{ data: txs }, { data: pricesData }, { data: divs }, { data: phData }] = await Promise.all([
-        supabase
-          .from("transactions")
-          .select("*")
-          .eq("user_id", user.id)
-          .order("trade_date", { ascending: true }),
-        supabase.from("manual_prices").select("isin,price").eq("user_id", user.id),
-        supabase.from("dividends").select("net_amount").eq("user_id", user.id),
-        supabase
-          .from("price_history")
-          .select("isin,price,recorded_at")
-          .eq("user_id", user.id)
-          .order("recorded_at", { ascending: true }),
-      ]);
+      const [{ data: txs }, { data: pricesData }, { data: divs }, { data: phData }, { data: bdData }] =
+        await Promise.all([
+          supabase
+            .from("transactions")
+            .select("*")
+            .eq("user_id", user.id)
+            .order("trade_date", { ascending: true }),
+          supabase.from("manual_prices").select("isin,price").eq("user_id", user.id),
+          supabase.from("dividends").select("net_amount").eq("user_id", user.id),
+          supabase
+            .from("price_history")
+            .select("isin,price,recorded_at")
+            .eq("user_id", user.id)
+            .order("recorded_at", { ascending: true }),
+          supabase.from("etf_geo_breakdown").select("isin,region,weight").eq("user_id", user.id),
+        ]);
 
       setTransactions(
         (txs ?? []).map((t) => ({
