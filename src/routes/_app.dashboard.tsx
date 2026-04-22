@@ -303,6 +303,34 @@ function Dashboard() {
           <AllocationDonut data={allocation} />
         </Card>
       </motion.div>
+
+      {rebalancing && rebalancing.rows.length > 0 && (
+        <motion.div
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.4 }}
+        >
+          <Card className="card-soft p-5 md:p-6">
+            <div className="mb-5 flex items-start justify-between gap-3">
+              <div>
+                <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                  Ribilanciamento
+                </p>
+                <h2 className="mt-1 font-display text-xl font-semibold">
+                  Scostamento dalla target allocation
+                </h2>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Confronto tra l'allocazione attuale e quella del primo CSV importato
+                </p>
+              </div>
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl bg-mint-soft text-primary-foreground">
+                <Scale className="h-4 w-4" />
+              </div>
+            </div>
+            <RebalancingTable rows={rebalancing.rows} totalValue={rebalancing.totalValue} />
+          </Card>
+        </motion.div>
+      )}
     </div>
   );
 }
