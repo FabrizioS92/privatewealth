@@ -1,7 +1,7 @@
 import { useEffect, useState, useMemo } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { motion } from "framer-motion";
-import { ArrowUpRight, Coins, PieChart, Scale, Sparkles, TrendingUp, Upload, Wallet } from "lucide-react";
+import { ArrowUpRight, Coins, Globe2, PieChart, Scale, Sparkles, TrendingUp, Upload, Wallet } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
@@ -19,6 +19,8 @@ import { computePositions } from "@/lib/degiro-parser";
 import { computePortfolioHistory, type PriceHistoryRow, type RangeKey } from "@/lib/portfolio-history";
 import { RebalancingTable } from "@/components/rebalancing-table";
 import { buildRebalancingRows, computeTargetAllocation } from "@/lib/rebalancing";
+import { GeoAllocation } from "@/components/geo-allocation";
+import { computeGeoAllocation } from "@/lib/geo-allocation";
 
 export const Route = createFileRoute("/_app/dashboard")({
   head: () => ({ meta: [{ title: "Home — Folio" }] }),
@@ -125,6 +127,11 @@ function Dashboard() {
     const pct = first > 0 ? (abs / first) * 100 : 0;
     return { abs, pct };
   }, [performance]);
+
+  const geoAllocation = useMemo(
+    () => computeGeoAllocation(positions, prices),
+    [positions, prices],
+  );
 
   const rebalancing = useMemo(() => {
     const target = computeTargetAllocation(transactions);
@@ -301,6 +308,30 @@ function Dashboard() {
             </div>
           </div>
           <AllocationDonut data={allocation} />
+        </Card>
+      </motion.div>
+
+      <motion.div
+        initial={{ opacity: 0, y: 16 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, delay: 0.35 }}
+      >
+        <Card className="card-soft p-5 md:p-6">
+          <div className="mb-4 flex items-center justify-between">
+            <div>
+              <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                Geografia
+              </p>
+              <h2 className="mt-1 font-display text-xl font-semibold">Allocazione geografica</h2>
+              <p className="mt-1 text-xs text-muted-foreground">
+                Distribuzione per paese di emissione (codice ISIN)
+              </p>
+            </div>
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl bg-mint-soft text-primary-foreground">
+              <Globe2 className="h-4 w-4" />
+            </div>
+          </div>
+          <GeoAllocation data={geoAllocation} />
         </Card>
       </motion.div>
 
