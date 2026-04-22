@@ -58,16 +58,17 @@ export function GeoAllocation({
                 fontSize: 12,
                 boxShadow: "var(--shadow-elevated)",
               }}
-              formatter={(v: number | string, _n, item) => {
-                const slice = item?.payload as GeoSlice | undefined;
+              formatter={((v, _n, item) => {
+                const num = Number(v ?? 0);
+                const slice = (item as { payload?: GeoSlice } | undefined)?.payload;
                 return [
-                  `${formatCurrency(Number(v), currency)} · ${formatPercent(
-                    total > 0 ? Number(v) / total : 0,
+                  `${formatCurrency(num, currency)} · ${formatPercent(
+                    total > 0 ? num / total : 0,
                     1,
                   )}`,
                   slice ? `${slice.flag} ${slice.name}` : "",
                 ];
-              }}
+              }) as never}
             />
           </PieChart>
         </ResponsiveContainer>

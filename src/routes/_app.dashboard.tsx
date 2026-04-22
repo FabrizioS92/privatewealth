@@ -1,7 +1,7 @@
 import { useEffect, useState, useMemo } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { motion } from "framer-motion";
-import { ArrowUpRight, Coins, PieChart, Scale, Sparkles, TrendingUp, Upload, Wallet } from "lucide-react";
+import { ArrowUpRight, Coins, Globe2, PieChart, Scale, Sparkles, TrendingUp, Upload, Wallet } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
@@ -19,6 +19,8 @@ import { computePositions } from "@/lib/degiro-parser";
 import { computePortfolioHistory, type PriceHistoryRow, type RangeKey } from "@/lib/portfolio-history";
 import { RebalancingTable } from "@/components/rebalancing-table";
 import { buildRebalancingRows, computeTargetAllocation } from "@/lib/rebalancing";
+import { GeoAllocation } from "@/components/geo-allocation";
+import { computeGeoAllocation } from "@/lib/geo-allocation";
 
 export const Route = createFileRoute("/_app/dashboard")({
   head: () => ({ meta: [{ title: "Home — Folio" }] }),
@@ -125,6 +127,11 @@ function Dashboard() {
     const pct = first > 0 ? (abs / first) * 100 : 0;
     return { abs, pct };
   }, [performance]);
+
+  const geoAllocation = useMemo(
+    () => computeGeoAllocation(positions, prices),
+    [positions, prices],
+  );
 
   const rebalancing = useMemo(() => {
     const target = computeTargetAllocation(transactions);
