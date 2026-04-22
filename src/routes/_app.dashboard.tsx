@@ -87,6 +87,16 @@ function Dashboard() {
         })),
       );
       setDividendsTotal((divs ?? []).reduce((s, d) => s + Number(d.net_amount), 0));
+      const bdMap: BreakdownMap = {};
+      (bdData ?? []).forEach((row) => {
+        const isin = String(row.isin);
+        if (!bdMap[isin]) bdMap[isin] = [];
+        bdMap[isin].push({
+          region: row.region as RegionKey,
+          weight: Number(row.weight),
+        });
+      });
+      setBreakdowns(bdMap);
       setLoading(false);
     })();
   }, [user]);
@@ -133,9 +143,16 @@ function Dashboard() {
   }, [performance]);
 
   const geoAllocation = useMemo(
-    () => computeGeoAllocation(positions, prices),
-    [positions, prices],
+    () => computeGeoAllocation(positions, prices, breakdowns),
+    [positions, prices, breakdowns],
   );
+
+  const handleBreakdownUpdated = (
+    isin: string,
+    weights: { region: RegionKey; weight: number }[],
+  ) => {
+    setBreakdowns((prev) => ({ ...prev, [isin]: weights }));
+  };
 
   const rebalancing = useMemo(() => {
     const target = computeTargetAllocation(transactions);
