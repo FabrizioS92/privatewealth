@@ -345,14 +345,25 @@ function Dashboard() {
               </p>
               <h2 className="mt-1 font-display text-xl font-semibold">Allocazione geografica</h2>
               <p className="mt-1 text-xs text-muted-foreground">
-                Distribuzione per paese di emissione (codice ISIN)
+                Distribuzione per macro-regione, calcolata sulla composizione interna di ogni ETF
               </p>
             </div>
             <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl bg-mint-soft text-primary-foreground">
               <Globe2 className="h-4 w-4" />
             </div>
           </div>
-          <GeoAllocation data={geoAllocation} />
+          <GeoAllocation
+            data={geoAllocation.slices}
+            coveredValue={geoAllocation.coveredValue}
+            totalValue={geoAllocation.totalValue}
+            missingPositions={geoAllocation.missingIsins
+              .map((isin) => {
+                const pos = positions.find((p) => p.isin === isin);
+                return pos ? { isin, name: pos.name } : null;
+              })
+              .filter((x): x is { isin: string; name: string } => x !== null)}
+            onBreakdownUpdated={handleBreakdownUpdated}
+          />
         </Card>
       </motion.div>
 
