@@ -20,7 +20,8 @@ import { computePortfolioHistory, type PriceHistoryRow, type RangeKey } from "@/
 import { RebalancingTable } from "@/components/rebalancing-table";
 import { buildRebalancingRows, computeTargetAllocation } from "@/lib/rebalancing";
 import { GeoAllocation } from "@/components/geo-allocation";
-import { computeGeoAllocation } from "@/lib/geo-allocation";
+import { computeGeoAllocation, type BreakdownMap } from "@/lib/geo-allocation";
+import type { RegionKey } from "@/lib/regions";
 
 export const Route = createFileRoute("/_app/dashboard")({
   head: () => ({ meta: [{ title: "Home — Folio" }] }),
