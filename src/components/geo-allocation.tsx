@@ -58,7 +58,7 @@ export function GeoAllocation({
                 fontSize: 12,
                 boxShadow: "var(--shadow-elevated)",
               }}
-              formatter={((v, _n, item) => {
+              formatter={((v: unknown, _n: unknown, item: unknown) => {
                 const num = Number(v ?? 0);
                 const slice = (item as { payload?: GeoSlice } | undefined)?.payload;
                 return [
