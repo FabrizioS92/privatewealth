@@ -62,6 +62,36 @@ export type Database = {
         }
         Relationships: []
       }
+      etf_geo_breakdown: {
+        Row: {
+          fetched_at: string
+          id: string
+          isin: string
+          region: string
+          source: string
+          user_id: string
+          weight: number
+        }
+        Insert: {
+          fetched_at?: string
+          id?: string
+          isin: string
+          region: string
+          source?: string
+          user_id: string
+          weight: number
+        }
+        Update: {
+          fetched_at?: string
+          id?: string
+          isin?: string
+          region?: string
+          source?: string
+          user_id?: string
+          weight?: number
+        }
+        Relationships: []
+      }
       manual_prices: {
         Row: {
           currency: string

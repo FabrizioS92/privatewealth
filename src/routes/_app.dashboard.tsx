@@ -20,7 +20,8 @@ import { computePortfolioHistory, type PriceHistoryRow, type RangeKey } from "@/
 import { RebalancingTable } from "@/components/rebalancing-table";
 import { buildRebalancingRows, computeTargetAllocation } from "@/lib/rebalancing";
 import { GeoAllocation } from "@/components/geo-allocation";
-import { computeGeoAllocation } from "@/lib/geo-allocation";
+import { computeGeoAllocation, type BreakdownMap } from "@/lib/geo-allocation";
+import type { RegionKey } from "@/lib/regions";
 
 export const Route = createFileRoute("/_app/dashboard")({
   head: () => ({ meta: [{ title: "Home — Folio" }] }),
@@ -40,24 +41,27 @@ function Dashboard() {
   const [priceHistory, setPriceHistory] = useState<PriceHistoryRow[]>([]);
   const [dividendsTotal, setDividendsTotal] = useState(0);
   const [range, setRange] = useState<RangeKey>("6M");
+  const [breakdowns, setBreakdowns] = useState<BreakdownMap>({});
 
   useEffect(() => {
     if (!user) return;
     void (async () => {
-      const [{ data: txs }, { data: pricesData }, { data: divs }, { data: phData }] = await Promise.all([
-        supabase
-          .from("transactions")
-          .select("*")
-          .eq("user_id", user.id)
-          .order("trade_date", { ascending: true }),
-        supabase.from("manual_prices").select("isin,price").eq("user_id", user.id),
-        supabase.from("dividends").select("net_amount").eq("user_id", user.id),
-        supabase
-          .from("price_history")
-          .select("isin,price,recorded_at")
-          .eq("user_id", user.id)
-          .order("recorded_at", { ascending: true }),
-      ]);
+      const [{ data: txs }, { data: pricesData }, { data: divs }, { data: phData }, { data: bdData }] =
+        await Promise.all([
+          supabase
+            .from("transactions")
+            .select("*")
+            .eq("user_id", user.id)
+            .order("trade_date", { ascending: true }),
+          supabase.from("manual_prices").select("isin,price").eq("user_id", user.id),
+          supabase.from("dividends").select("net_amount").eq("user_id", user.id),
+          supabase
+            .from("price_history")
+            .select("isin,price,recorded_at")
+            .eq("user_id", user.id)
+            .order("recorded_at", { ascending: true }),
+          supabase.from("etf_geo_breakdown").select("isin,region,weight").eq("user_id", user.id),
+        ]);
 
       setTransactions(
         (txs ?? []).map((t) => ({
@@ -83,6 +87,16 @@ function Dashboard() {
         })),
       );
       setDividendsTotal((divs ?? []).reduce((s, d) => s + Number(d.net_amount), 0));
+      const bdMap: BreakdownMap = {};
+      (bdData ?? []).forEach((row) => {
+        const isin = String(row.isin);
+        if (!bdMap[isin]) bdMap[isin] = [];
+        bdMap[isin].push({
+          region: row.region as RegionKey,
+          weight: Number(row.weight),
+        });
+      });
+      setBreakdowns(bdMap);
       setLoading(false);
     })();
   }, [user]);
@@ -129,9 +143,16 @@ function Dashboard() {
   }, [performance]);
 
   const geoAllocation = useMemo(
-    () => computeGeoAllocation(positions, prices),
-    [positions, prices],
+    () => computeGeoAllocation(positions, prices, breakdowns),
+    [positions, prices, breakdowns],
   );
+
+  const handleBreakdownUpdated = (
+    isin: string,
+    weights: { region: RegionKey; weight: number }[],
+  ) => {
+    setBreakdowns((prev) => ({ ...prev, [isin]: weights }));
+  };
 
   const rebalancing = useMemo(() => {
     const target = computeTargetAllocation(transactions);
@@ -324,14 +345,25 @@ function Dashboard() {
               </p>
               <h2 className="mt-1 font-display text-xl font-semibold">Allocazione geografica</h2>
               <p className="mt-1 text-xs text-muted-foreground">
-                Distribuzione per paese di emissione (codice ISIN)
+                Distribuzione per macro-regione, calcolata sulla composizione interna di ogni ETF
               </p>
             </div>
             <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl bg-mint-soft text-primary-foreground">
               <Globe2 className="h-4 w-4" />
             </div>
           </div>
-          <GeoAllocation data={geoAllocation} />
+          <GeoAllocation
+            data={geoAllocation.slices}
+            coveredValue={geoAllocation.coveredValue}
+            totalValue={geoAllocation.totalValue}
+            missingPositions={geoAllocation.missingIsins
+              .map((isin) => {
+                const pos = positions.find((p) => p.isin === isin);
+                return pos ? { isin, name: pos.name } : null;
+              })
+              .filter((x): x is { isin: string; name: string } => x !== null)}
+            onBreakdownUpdated={handleBreakdownUpdated}
+          />
         </Card>
       </motion.div>
 

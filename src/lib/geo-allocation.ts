@@ -1,81 +1,58 @@
 import type { Position } from "@/lib/degiro-parser";
+import { REGION_FLAGS, REGION_LABELS, type RegionKey } from "@/lib/regions";
 
-// ISIN: i primi 2 caratteri sono il codice ISO 3166-1 alpha-2 del paese di emissione
 export interface GeoSlice {
-  code: string; // codice ISO (es. "US", "IE", "DE")
-  name: string; // nome paese localizzato
-  flag: string; // emoji bandiera
-  value: number; // valore di mercato in base currency
+  region: RegionKey;
+  name: string;
+  flag: string;
+  value: number;
 }
 
-const COUNTRY_NAMES: Record<string, string> = {
-  US: "Stati Uniti",
-  IE: "Irlanda",
-  LU: "Lussemburgo",
-  DE: "Germania",
-  FR: "Francia",
-  IT: "Italia",
-  GB: "Regno Unito",
-  NL: "Paesi Bassi",
-  CH: "Svizzera",
-  ES: "Spagna",
-  BE: "Belgio",
-  AT: "Austria",
-  PT: "Portogallo",
-  SE: "Svezia",
-  NO: "Norvegia",
-  DK: "Danimarca",
-  FI: "Finlandia",
-  CA: "Canada",
-  JP: "Giappone",
-  CN: "Cina",
-  HK: "Hong Kong",
-  KR: "Corea del Sud",
-  IN: "India",
-  AU: "Australia",
-  BR: "Brasile",
-  MX: "Messico",
-  ZA: "Sudafrica",
-  SG: "Singapore",
-  KY: "Isole Cayman",
-  BM: "Bermuda",
-  JE: "Jersey",
-  GG: "Guernsey",
-  IM: "Isola di Man",
-  IL: "Israele",
-};
-
-function codeToFlag(code: string): string {
-  if (code.length !== 2) return "🏳️";
-  const A = 0x1f1e6;
-  const a = "A".charCodeAt(0);
-  const chars = [...code.toUpperCase()].map((c) =>
-    String.fromCodePoint(A + (c.charCodeAt(0) - a)),
-  );
-  return chars.join("");
+export interface BreakdownMap {
+  // ISIN -> array di { region, weight (0..100) }
+  [isin: string]: { region: RegionKey; weight: number }[];
 }
 
+/**
+ * Calcola l'allocazione geografica look-through:
+ * Per ogni posizione, distribuisce il valore di mercato sulle regioni in base
+ * alla composizione interna dell'ETF (breakdown). Posizioni senza breakdown
+ * vengono escluse dal calcolo (e segnalate separatamente).
+ */
 export function computeGeoAllocation(
   positions: Position[],
   prices: Record<string, number>,
-): GeoSlice[] {
-  const buckets = new Map<string, number>();
+  breakdowns: BreakdownMap,
+): { slices: GeoSlice[]; missingIsins: string[]; coveredValue: number; totalValue: number } {
+  const buckets = new Map<RegionKey, number>();
+  const missing: string[] = [];
+  let covered = 0;
+  let total = 0;
+
   for (const p of positions) {
     if (p.quantity <= 0) continue;
-    const code = (p.isin ?? "").slice(0, 2).toUpperCase();
     const value = p.quantity * (prices[p.isin] ?? p.avg_cost);
-    if (!code || code.length !== 2 || !/^[A-Z]{2}$/.test(code)) {
-      buckets.set("??", (buckets.get("??") ?? 0) + value);
+    total += value;
+    const bd = breakdowns[p.isin];
+    if (!bd || bd.length === 0) {
+      missing.push(p.isin);
       continue;
     }
-    buckets.set(code, (buckets.get(code) ?? 0) + value);
+    covered += value;
+    for (const row of bd) {
+      const portion = value * (row.weight / 100);
+      buckets.set(row.region, (buckets.get(row.region) ?? 0) + portion);
+    }
   }
-  return [...buckets.entries()]
-    .map(([code, value]) => ({
-      code,
+
+  const slices = [...buckets.entries()]
+    .map(([region, value]) => ({
+      region,
       value,
-      name: code === "??" ? "Sconosciuto" : (COUNTRY_NAMES[code] ?? code),
-      flag: code === "??" ? "🏳️" : codeToFlag(code),
+      name: REGION_LABELS[region],
+      flag: REGION_FLAGS[region],
     }))
     .sort((a, b) => b.value - a.value);
+
+  return { slices, missingIsins: missing, coveredValue: covered, totalValue: total };
 }
