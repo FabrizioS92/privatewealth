@@ -116,7 +116,7 @@ export function RebalancingTable({
               </div>
 
               <div className="col-span-2 md:col-span-1 md:order-2">
-                <Bar current={r.currentPct} target={r.targetPct} />
+                <Bar current={r.currentPct} target={r.targetPct} color={colorMap?.[r.isin]} />
               </div>
 
               <div className="hidden text-right text-sm font-medium tabular-nums md:block md:order-3">
