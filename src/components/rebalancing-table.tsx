@@ -76,9 +76,11 @@ function DeltaBadge({ delta }: { delta: number }) {
 export function RebalancingTable({
   rows,
   totalValue,
+  colorMap,
 }: {
   rows: RebalancingRow[];
   totalValue: number;
+  colorMap?: Record<string, string>;
 }) {
   const actionable = rows.filter((r) => Math.abs(r.delta) >= TOLERANCE);
   const toSell = actionable.filter((r) => r.delta > 0);
