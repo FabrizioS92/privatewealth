@@ -1,6 +1,6 @@
 import { Link, useLocation } from "@tanstack/react-router";
 import { motion } from "framer-motion";
-import { Home, PieChart, ArrowLeftRight, Coins, Upload, Settings, LogOut } from "lucide-react";
+import { Home, PieChart, ArrowLeftRight, Coins, Upload, Settings, LogOut, BarChart2 } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
 import { FolioMark } from "@/components/folio-mark";
@@ -11,6 +11,7 @@ const NAV_ITEMS = [
   { to: "/portfolio", label: "Portafoglio", icon: PieChart },
   { to: "/transactions", label: "Movimenti", icon: ArrowLeftRight },
   { to: "/dividends", label: "Dividendi", icon: Coins },
+  { to: "/correlation", label: "Correlazione", icon: BarChart2 },
   { to: "/import", label: "Import", icon: Upload },
 ] as const;
 
@@ -107,7 +108,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       </main>
 
       {/* Mobile bottom nav */}
-      <nav className="fixed bottom-3 left-3 right-3 z-30 grid grid-cols-5 rounded-3xl border border-border bg-card/95 p-1.5 shadow-[var(--shadow-elevated)] backdrop-blur-xl md:hidden">
+      <nav className="fixed bottom-3 left-3 right-3 z-30 grid grid-cols-6 rounded-3xl border border-border bg-card/95 p-1.5 shadow-[var(--shadow-elevated)] backdrop-blur-xl md:hidden">
         {NAV_ITEMS.map((item) => {
           const Icon = item.icon;
           const active = location.pathname.startsWith(item.to);

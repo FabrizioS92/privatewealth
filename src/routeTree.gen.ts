@@ -20,6 +20,7 @@ import { Route as AppPortfolioRouteImport } from './routes/_app.portfolio'
 import { Route as AppImportRouteImport } from './routes/_app.import'
 import { Route as AppDividendsRouteImport } from './routes/_app.dividends'
 import { Route as AppDashboardRouteImport } from './routes/_app.dashboard'
+import { Route as AppCorrelationRouteImport } from './routes/_app.correlation'
 
 const WelcomeRoute = WelcomeRouteImport.update({
   id: '/welcome',
@@ -75,12 +76,18 @@ const AppDashboardRoute = AppDashboardRouteImport.update({
   path: '/dashboard',
   getParentRoute: () => AppRoute,
 } as any)
+const AppCorrelationRoute = AppCorrelationRouteImport.update({
+  id: '/correlation',
+  path: '/correlation',
+  getParentRoute: () => AppRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/onboarding': typeof OnboardingRoute
   '/welcome': typeof WelcomeRoute
+  '/correlation': typeof AppCorrelationRoute
   '/dashboard': typeof AppDashboardRoute
   '/dividends': typeof AppDividendsRoute
   '/import': typeof AppImportRoute
@@ -93,6 +100,7 @@ export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
   '/onboarding': typeof OnboardingRoute
   '/welcome': typeof WelcomeRoute
+  '/correlation': typeof AppCorrelationRoute
   '/dashboard': typeof AppDashboardRoute
   '/dividends': typeof AppDividendsRoute
   '/import': typeof AppImportRoute
@@ -107,6 +115,7 @@ export interface FileRoutesById {
   '/auth': typeof AuthRoute
   '/onboarding': typeof OnboardingRoute
   '/welcome': typeof WelcomeRoute
+  '/_app/correlation': typeof AppCorrelationRoute
   '/_app/dashboard': typeof AppDashboardRoute
   '/_app/dividends': typeof AppDividendsRoute
   '/_app/import': typeof AppImportRoute
@@ -121,6 +130,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/onboarding'
     | '/welcome'
+    | '/correlation'
     | '/dashboard'
     | '/dividends'
     | '/import'
@@ -133,6 +143,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/onboarding'
     | '/welcome'
+    | '/correlation'
     | '/dashboard'
     | '/dividends'
     | '/import'
@@ -146,6 +157,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/onboarding'
     | '/welcome'
+    | '/_app/correlation'
     | '/_app/dashboard'
     | '/_app/dividends'
     | '/_app/import'
@@ -241,10 +253,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppDashboardRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/correlation': {
+      id: '/_app/correlation'
+      path: '/correlation'
+      fullPath: '/correlation'
+      preLoaderRoute: typeof AppCorrelationRouteImport
+      parentRoute: typeof AppRoute
+    }
   }
 }
 
 interface AppRouteChildren {
+  AppCorrelationRoute: typeof AppCorrelationRoute
   AppDashboardRoute: typeof AppDashboardRoute
   AppDividendsRoute: typeof AppDividendsRoute
   AppImportRoute: typeof AppImportRoute
@@ -254,6 +274,7 @@ interface AppRouteChildren {
 }
 
 const AppRouteChildren: AppRouteChildren = {
+  AppCorrelationRoute: AppCorrelationRoute,
   AppDashboardRoute: AppDashboardRoute,
   AppDividendsRoute: AppDividendsRoute,
   AppImportRoute: AppImportRoute,
