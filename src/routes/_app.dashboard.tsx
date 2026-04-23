@@ -147,6 +147,23 @@ function Dashboard() {
     [positions, prices, breakdowns],
   );
 
+  // Mappa ISIN -> colore, allineata all'ordine dell'AllocationDonut
+  // (stesso array di var(--color-chart-N) usato nel donut)
+  const allocationColorMap = useMemo(() => {
+    const palette = [
+      "var(--color-chart-1)",
+      "var(--color-chart-2)",
+      "var(--color-chart-3)",
+      "var(--color-chart-4)",
+      "var(--color-chart-5)",
+    ];
+    const map: Record<string, string> = {};
+    allocation.forEach((a, i) => {
+      if (a.isin) map[a.isin] = palette[i % palette.length];
+    });
+    return map;
+  }, [allocation]);
+
   const handleBreakdownUpdated = (
     isin: string,
     weights: { region: RegionKey; weight: number }[],
