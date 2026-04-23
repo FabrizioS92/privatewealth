@@ -11,10 +11,9 @@ interface Props {
   onAnalyze: () => void;
   loading: boolean;
   colorMap: Record<string, string>;
-  error?: string | null;
 }
 
-export function ETFSelector({ tickers, onAdd, onRemove, onAnalyze, loading, colorMap, error }: Props) {
+export function ETFSelector({ tickers, onAdd, onRemove, onAnalyze, loading, colorMap }: Props) {
   const [value, setValue] = useState("");
 
   const handleAdd = () => {
