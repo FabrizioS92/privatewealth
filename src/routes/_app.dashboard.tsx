@@ -407,7 +407,7 @@ function Dashboard() {
                 <Scale className="h-4 w-4" />
               </div>
             </div>
-            <RebalancingTable rows={rebalancing.rows} totalValue={rebalancing.totalValue} />
+            <RebalancingTable rows={rebalancing.rows} totalValue={rebalancing.totalValue} colorMap={allocationColorMap} />
           </Card>
         </motion.div>
       )}
