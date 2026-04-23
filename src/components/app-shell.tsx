@@ -108,7 +108,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       </main>
 
       {/* Mobile bottom nav */}
-      <nav className="fixed bottom-3 left-3 right-3 z-30 grid grid-cols-5 rounded-3xl border border-border bg-card/95 p-1.5 shadow-[var(--shadow-elevated)] backdrop-blur-xl md:hidden">
+      <nav className="fixed bottom-3 left-3 right-3 z-30 grid grid-cols-6 rounded-3xl border border-border bg-card/95 p-1.5 shadow-[var(--shadow-elevated)] backdrop-blur-xl md:hidden">
         {NAV_ITEMS.map((item) => {
           const Icon = item.icon;
           const active = location.pathname.startsWith(item.to);
