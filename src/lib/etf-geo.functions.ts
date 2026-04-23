@@ -4,52 +4,52 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { countryToRegion, REGION_KEYS, type RegionKey } from "@/lib/regions";
 
 const isinRegex = /^[A-Z]{2}[A-Z0-9]{9}\d$/;
+const JUSTETF_BASE_URL = "https://www.justetf.com/en/etf-profile.html?isin=";
 
 interface ScrapedRegion {
   region: RegionKey;
   weight: number;
 }
 
-async function scrapeJustEtf(isin: string): Promise<ScrapedRegion[] | null> {
-  const apiKey = process.env.FIRECRAWL_API_KEY;
-  if (!apiKey) throw new Error("FIRECRAWL_API_KEY non configurata");
+function normalizeCountryLabel(value: string): string {
+  return value
+    .replace(/\[([^\]]+)\]\([^)]+\)/g, "$1")
+    .replace(/<[^>]+>/g, " ")
+    .replace(/&amp;/gi, "&")
+    .replace(/&quot;/gi, '"')
+    .replace(/&#39;|&apos;/gi, "'")
+    .replace(/&nbsp;/gi, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
 
-  const url = `https://www.justetf.com/en/etf-profile.html?isin=${isin}`;
-  const res = await fetch("https://api.firecrawl.dev/v2/scrape", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${apiKey}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      url,
-      formats: ["markdown"],
-      onlyMainContent: true,
-      waitFor: 4000,
-    }),
-  });
-
-  if (!res.ok) {
-    console.error("Firecrawl scrape failed", res.status, await res.text());
+function finalizeRegions(buckets: Map<RegionKey, number>, isin: string): ScrapedRegion[] | null {
+  if (buckets.size === 0) {
+    console.warn("[justetf] Nessun paese trovato per ISIN", isin);
     return null;
   }
-  const json = (await res.json()) as { data?: { markdown?: string }; markdown?: string };
-  const md = json.data?.markdown ?? json.markdown ?? "";
-  if (!md) return null;
 
-  // JustETF rende la composizione geografica in una sezione che si chiama
-  // "Countries" (heading "### Countries") seguita da una tabella markdown:
-  //   | United States | 66.27% |
-  //   | Japan         |  5.94% |
-  //   | Other         | 21.20% |
-  // La sezione termina al successivo heading (es. "### Sectors").
+  const total = [...buckets.values()].reduce((sum, value) => sum + value, 0);
+  if (total < 30) {
+    console.warn("[justetf] Totale troppo basso", total, "per ISIN", isin);
+    return null;
+  }
+
+  const factor = 100 / total;
+  return [...buckets.entries()].map(([region, weight]) => ({
+    region,
+    weight: Math.round(weight * factor * 100) / 100,
+  }));
+}
+
+function parseCountriesTable(lines: string[], isin: string): ScrapedRegion[] | null {
   const buckets = new Map<RegionKey, number>();
-  const lines = md.split("\n");
   let inSection = false;
 
   for (const line of lines) {
     const trimmed = line.trim();
     const headingMatch = trimmed.match(/^#{1,6}\s+(.*)$/);
+    const plainHeading = trimmed.toLowerCase();
 
     if (headingMatch) {
       const headingText = headingMatch[1].toLowerCase();
@@ -63,46 +63,112 @@ async function scrapeJustEtf(isin: string): Promise<ScrapedRegion[] | null> {
         inSection = true;
         continue;
       }
-      // Qualunque altro heading chiude la sezione corrente
       if (inSection) break;
       continue;
     }
 
-    if (!inSection) continue;
+    if (!inSection && plainHeading === "countries") {
+      inSection = true;
+      continue;
+    }
 
-    // Salto separatori di tabella markdown (| --- | --- |)
+    if (!inSection || !trimmed || trimmed.toLowerCase() === "show more") continue;
     if (/^\|?\s*-{2,}/.test(trimmed)) continue;
 
-    // Riga tabella: "| Country | xx.xx% |" oppure "Country | xx.xx%"
-    const match = trimmed.match(/^\|?\s*([A-Za-z][A-Za-z .&'-]+?)\s*\|\s*(\d+(?:[.,]\d+)?)\s*%/);
+    const match = trimmed.match(/^\|?\s*(.+?)\s*\|\s*(\d+(?:[.,]\d+)?)\s*%/);
     if (!match) continue;
 
-    const country = match[1].trim();
+    const country = normalizeCountryLabel(match[1]);
     const pct = parseFloat(match[2].replace(",", "."));
-    if (!Number.isFinite(pct) || pct <= 0 || pct > 100) continue;
-    if (country.toLowerCase() === "country" || country.toLowerCase() === "weighting") continue;
+    if (!country || !Number.isFinite(pct) || pct <= 0 || pct > 100) continue;
+
+    const normalized = country.toLowerCase();
+    if (normalized === "country" || normalized === "weighting") continue;
 
     const region = countryToRegion(country);
     buckets.set(region, (buckets.get(region) ?? 0) + pct);
   }
 
-  if (buckets.size === 0) {
-    console.warn("[justetf] Nessun paese trovato nel markdown per ISIN", isin);
+  return finalizeRegions(buckets, isin);
+}
+
+function parseJustEtfHtml(html: string, isin: string): ScrapedRegion[] | null {
+  const sectionMatch = html.match(/<h[1-6][^>]*>\s*Countries\s*<\/h[1-6]>([\s\S]*?)(?=<h[1-6][^>]*>)/i);
+  const section = sectionMatch?.[1] ?? html;
+  const rowRegex = /<tr[^>]*>\s*<td[^>]*>([\s\S]*?)<\/td>\s*<td[^>]*>[\s\S]*?(\d+(?:[.,]\d+)?)%/gi;
+  const buckets = new Map<RegionKey, number>();
+
+  for (const match of section.matchAll(rowRegex)) {
+    const country = normalizeCountryLabel(match[1] ?? "");
+    const pct = parseFloat((match[2] ?? "").replace(",", "."));
+    if (!country || !Number.isFinite(pct) || pct <= 0 || pct > 100) continue;
+
+    const normalized = country.toLowerCase();
+    if (normalized === "country" || normalized === "weighting") continue;
+
+    const region = countryToRegion(country);
+    buckets.set(region, (buckets.get(region) ?? 0) + pct);
+  }
+
+  return finalizeRegions(buckets, isin);
+}
+
+async function scrapeWithFirecrawl(isin: string): Promise<ScrapedRegion[] | null> {
+  const apiKey = process.env.FIRECRAWL_API_KEY;
+  if (!apiKey) return null;
+
+  const res = await fetch("https://api.firecrawl.dev/v2/scrape", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${apiKey}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      url: `${JUSTETF_BASE_URL}${isin}`,
+      formats: ["markdown"],
+      onlyMainContent: true,
+      waitFor: 4000,
+    }),
+  });
+
+  if (!res.ok) {
+    console.error("Firecrawl scrape failed", res.status, await res.text());
     return null;
   }
 
-  // Normalizzo in modo che la somma sia 100 (JustETF tipicamente mostra
-  // i top paesi + "Other" che sommati fanno ~100)
-  const total = [...buckets.values()].reduce((s, v) => s + v, 0);
-  if (total < 30) {
-    console.warn("[justetf] Totale troppo basso", total, "per ISIN", isin);
+  const json = (await res.json()) as { data?: { markdown?: string }; markdown?: string };
+  const markdown = json.data?.markdown ?? json.markdown ?? "";
+  if (!markdown) return null;
+
+  return parseCountriesTable(markdown.split("\n"), isin);
+}
+
+async function fetchJustEtfHtml(isin: string): Promise<string | null> {
+  const res = await fetch(`${JUSTETF_BASE_URL}${isin}`, {
+    headers: {
+      "user-agent": "Mozilla/5.0",
+      "accept-language": "en-US,en;q=0.9",
+    },
+  });
+
+  if (!res.ok) {
+    console.error("JustETF direct fetch failed", res.status, await res.text());
     return null;
   }
-  const factor = 100 / total;
-  return [...buckets.entries()].map(([region, weight]) => ({
-    region,
-    weight: Math.round(weight * factor * 100) / 100,
-  }));
+
+  return res.text();
+}
+
+async function scrapeJustEtf(isin: string): Promise<ScrapedRegion[] | null> {
+  const fromFirecrawl = await scrapeWithFirecrawl(isin);
+  if (fromFirecrawl && fromFirecrawl.length > 0) {
+    return fromFirecrawl;
+  }
+
+  const html = await fetchJustEtfHtml(isin);
+  if (!html) return null;
+
+  return parseJustEtfHtml(html, isin);
 }
 
 export const fetchEtfGeoBreakdown = createServerFn({ method: "POST" })
