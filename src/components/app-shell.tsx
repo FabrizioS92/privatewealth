@@ -1,6 +1,6 @@
 import { Link, useLocation } from "@tanstack/react-router";
 import { motion } from "framer-motion";
-import { Home, PieChart, ArrowLeftRight, Coins, Upload, Settings, LogOut } from "lucide-react";
+import { Home, PieChart, ArrowLeftRight, Coins, Upload, Settings, LogOut, BarChart2 } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
 import { FolioMark } from "@/components/folio-mark";
@@ -11,6 +11,7 @@ const NAV_ITEMS = [
   { to: "/portfolio", label: "Portafoglio", icon: PieChart },
   { to: "/transactions", label: "Movimenti", icon: ArrowLeftRight },
   { to: "/dividends", label: "Dividendi", icon: Coins },
+  { to: "/correlation", label: "Correlazione", icon: BarChart2 },
   { to: "/import", label: "Import", icon: Upload },
 ] as const;
 
