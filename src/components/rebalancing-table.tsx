@@ -19,18 +19,18 @@ function deltaTone(delta: number): "pos" | "neg" | "neutral" {
   return delta > 0 ? "pos" : "neg";
 }
 
-function Bar({ current, target }: { current: number; target: number }) {
-  const max = Math.max(current, target, 1) * 1.15;
-  const currentW = Math.min(100, (current / max) * 100);
-  const targetX = Math.min(100, (target / max) * 100);
-  const tone = deltaTone(current - target);
-
-  const fillClass =
-    tone === "pos"
-      ? "bg-[oklch(0.72_0.13_55)]" // warm amber for over-allocated
-      : tone === "neg"
-        ? "bg-[oklch(0.62_0.14_240)]" // cool blue for under-allocated
-        : "bg-muted-foreground/40";
+function Bar({
+  current,
+  target,
+  color,
+}: {
+  current: number;
+  target: number;
+  color?: string;
+}) {
+  // Proporzionale al 100% reale del portafoglio (NON riscalato).
+  const currentW = Math.max(0, Math.min(100, current));
+  const targetX = Math.max(0, Math.min(100, target));
 
   return (
     <div className="relative h-2 w-full overflow-hidden rounded-full bg-secondary/70">
@@ -38,7 +38,8 @@ function Bar({ current, target }: { current: number; target: number }) {
         initial={{ width: 0 }}
         animate={{ width: `${currentW}%` }}
         transition={{ duration: 0.6, ease: [0.2, 0.8, 0.2, 1] }}
-        className={`absolute left-0 top-0 h-full rounded-full ${fillClass}`}
+        className="absolute left-0 top-0 h-full rounded-full"
+        style={{ backgroundColor: color ?? "var(--color-chart-1)" }}
       />
       <span
         className="absolute top-1/2 h-3 w-[2px] -translate-y-1/2 rounded-full bg-foreground/70"
