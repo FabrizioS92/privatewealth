@@ -25,7 +25,7 @@ async function scrapeJustEtf(isin: string): Promise<ScrapedRegion[] | null> {
       url,
       formats: ["markdown"],
       onlyMainContent: true,
-      waitFor: 1500,
+      waitFor: 4000,
     }),
   });
 
@@ -37,43 +37,67 @@ async function scrapeJustEtf(isin: string): Promise<ScrapedRegion[] | null> {
   const md = json.data?.markdown ?? json.markdown ?? "";
   if (!md) return null;
 
-  // Cerco la sezione "Holdings by country" o "Countries"
-  // JustETF la rende come tabella markdown con righe "Country | xx.xx%"
+  // JustETF rende la composizione geografica in una sezione che si chiama
+  // "Countries" (heading "### Countries") seguita da una tabella markdown:
+  //   | United States | 66.27% |
+  //   | Japan         |  5.94% |
+  //   | Other         | 21.20% |
+  // La sezione termina al successivo heading (es. "### Sectors").
   const buckets = new Map<RegionKey, number>();
   const lines = md.split("\n");
   let inSection = false;
+
   for (const line of lines) {
-    const lower = line.toLowerCase();
-    if (
-      lower.includes("holdings by country") ||
-      lower.includes("countries") ||
-      lower.match(/^#+\s*country/)
-    ) {
-      inSection = true;
+    const trimmed = line.trim();
+    const headingMatch = trimmed.match(/^#{1,6}\s+(.*)$/);
+
+    if (headingMatch) {
+      const headingText = headingMatch[1].toLowerCase();
+      if (
+        headingText === "countries" ||
+        headingText.startsWith("countries") ||
+        headingText.includes("holdings by country") ||
+        headingText.includes("country breakdown") ||
+        headingText.includes("country weight")
+      ) {
+        inSection = true;
+        continue;
+      }
+      // Qualunque altro heading chiude la sezione corrente
+      if (inSection) break;
       continue;
     }
-    if (inSection && (lower.startsWith("##") || lower.includes("sector") || lower.includes("currency"))) {
-      // fine sezione
-      if (buckets.size > 0) break;
-      inSection = false;
-    }
+
     if (!inSection) continue;
-    // Estraggo "Country xx.xx%" anche da righe markdown tabellari
-    const match = line.match(/([A-Za-z][A-Za-z .]+?)\s*[|:\s]+(\d+(?:[.,]\d+)?)\s*%/);
-    if (match) {
-      const country = match[1].trim();
-      const pct = parseFloat(match[2].replace(",", "."));
-      if (!Number.isFinite(pct) || pct <= 0 || pct > 100) continue;
-      const region = countryToRegion(country);
-      buckets.set(region, (buckets.get(region) ?? 0) + pct);
-    }
+
+    // Salto separatori di tabella markdown (| --- | --- |)
+    if (/^\|?\s*-{2,}/.test(trimmed)) continue;
+
+    // Riga tabella: "| Country | xx.xx% |" oppure "Country | xx.xx%"
+    const match = trimmed.match(/^\|?\s*([A-Za-z][A-Za-z .&'-]+?)\s*\|\s*(\d+(?:[.,]\d+)?)\s*%/);
+    if (!match) continue;
+
+    const country = match[1].trim();
+    const pct = parseFloat(match[2].replace(",", "."));
+    if (!Number.isFinite(pct) || pct <= 0 || pct > 100) continue;
+    if (country.toLowerCase() === "country" || country.toLowerCase() === "weighting") continue;
+
+    const region = countryToRegion(country);
+    buckets.set(region, (buckets.get(region) ?? 0) + pct);
   }
 
-  if (buckets.size === 0) return null;
+  if (buckets.size === 0) {
+    console.warn("[justetf] Nessun paese trovato nel markdown per ISIN", isin);
+    return null;
+  }
 
-  // Normalizzo in modo che la somma sia 100
+  // Normalizzo in modo che la somma sia 100 (JustETF tipicamente mostra
+  // i top paesi + "Other" che sommati fanno ~100)
   const total = [...buckets.values()].reduce((s, v) => s + v, 0);
-  if (total < 50) return null; // dati incompleti, non affidabili
+  if (total < 30) {
+    console.warn("[justetf] Totale troppo basso", total, "per ISIN", isin);
+    return null;
+  }
   const factor = 100 / total;
   return [...buckets.entries()].map(([region, weight]) => ({
     region,
