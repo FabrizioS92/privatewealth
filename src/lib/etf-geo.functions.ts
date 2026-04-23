@@ -25,7 +25,7 @@ async function scrapeJustEtf(isin: string): Promise<ScrapedRegion[] | null> {
       url,
       formats: ["markdown"],
       onlyMainContent: true,
-      waitFor: 1500,
+      waitFor: 4000,
     }),
   });
 
