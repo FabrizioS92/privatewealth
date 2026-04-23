@@ -8,6 +8,7 @@ import { Card } from "@/components/ui/card";
 import { FolioMark } from "@/components/folio-mark";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { friendlyError } from "@/lib/error-handler";
 
 export const Route = createFileRoute("/auth")({
   head: () => ({

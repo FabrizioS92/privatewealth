@@ -7,6 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
+import { friendlyError } from "@/lib/error-handler";
 
 export const Route = createFileRoute("/onboarding")({
   head: () => ({ meta: [{ title: "Benvenuto — Folio" }] }),

@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { parseDegiroCsv, type ParsedTransaction, type ParseResult } from "@/lib/degiro-parser";
 import { formatCurrency, formatPercent } from "@/lib/format";
+import { friendlyError } from "@/lib/error-handler";
 
 export const Route = createFileRoute("/_app/import")({
   head: () => ({ meta: [{ title: "Importa CSV — Folio" }] }),
