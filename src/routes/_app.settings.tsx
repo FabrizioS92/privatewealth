@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
+import { friendlyError } from "@/lib/error-handler";
 
 export const Route = createFileRoute("/_app/settings")({
   head: () => ({ meta: [{ title: "Impostazioni — Folio" }] }),
@@ -46,7 +47,7 @@ function SettingsPage() {
       .update({ display_name: displayName, base_currency: currency })
       .eq("user_id", user.id);
     setSaving(false);
-    if (error) toast.error(error.message);
+    if (error) toast.error(friendlyError(error, "Impossibile aggiornare il profilo."));
     else toast.success("Profilo aggiornato");
   };
 

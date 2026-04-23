@@ -8,6 +8,7 @@ import { Card } from "@/components/ui/card";
 import { FolioMark } from "@/components/folio-mark";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { friendlyError } from "@/lib/error-handler";
 
 export const Route = createFileRoute("/auth")({
   head: () => ({
@@ -58,14 +59,12 @@ function AuthPage() {
         navigate({ to: "/dashboard" });
       }
     } catch (err) {
-      const msg = err instanceof Error ? err.message : "Errore sconosciuto";
-      if (msg.toLowerCase().includes("invalid")) {
-        toast.error("Email o password non validi");
-      } else if (msg.toLowerCase().includes("already")) {
+      const msg = err instanceof Error ? err.message : "";
+      if (msg.toLowerCase().includes("already")) {
         toast.error("Account già esistente. Accedi.");
         setMode("signin");
       } else {
-        toast.error(msg);
+        toast.error(friendlyError(err, "Accesso non riuscito. Riprova."));
       }
     } finally {
       setLoading(false);

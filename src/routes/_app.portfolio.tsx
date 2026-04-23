@@ -3,6 +3,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { motion } from "framer-motion";
 import { Pencil, TrendingDown, TrendingUp } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { friendlyError } from "@/lib/error-handler";
 import { useAuth } from "@/hooks/use-auth";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -109,7 +110,7 @@ function PortfolioPage() {
       { onConflict: "user_id,isin" },
     );
     if (error) {
-      toast.error(error.message);
+      toast.error(friendlyError(error, "Impossibile salvare il prezzo."));
       return;
     }
     setPrices((p) => ({ ...p, [editing.isin]: price }));

@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { parseDegiroCsv, type ParsedTransaction, type ParseResult } from "@/lib/degiro-parser";
 import { formatCurrency, formatPercent } from "@/lib/format";
+import { friendlyError } from "@/lib/error-handler";
 
 export const Route = createFileRoute("/_app/import")({
   head: () => ({ meta: [{ title: "Importa CSV — Folio" }] }),
@@ -65,7 +66,7 @@ function ImportPage() {
         );
       }
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Errore parsing");
+      toast.error(friendlyError(err, "Errore durante il parsing del file."));
     } finally {
       setParsing(false);
     }
@@ -180,7 +181,7 @@ function ImportPage() {
         `${inserted} righe importate · ${skipped} duplicate · ${updated} prezzi aggiornati · ${created} nuovi`,
       );
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Errore import");
+      toast.error(friendlyError(err, "Importazione non riuscita."));
     } finally {
       setImporting(false);
     }
