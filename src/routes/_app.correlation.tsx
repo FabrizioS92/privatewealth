@@ -186,7 +186,6 @@ function CorrelationPage() {
           onAnalyze={handleAnalyze}
           loading={loading}
           colorMap={colorMap}
-          error={error && !loading ? null : null}
         />
         {error && (
           <div className="mt-4 flex items-center justify-between rounded-2xl border border-destructive/30 bg-destructive/5 p-3 text-sm text-destructive">
