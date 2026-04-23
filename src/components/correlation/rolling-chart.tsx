@@ -99,7 +99,7 @@ export function RollingChart({ series }: Props) {
                 background: "var(--card)",
                 fontSize: 12,
               }}
-              formatter={(v: number) => [v.toFixed(2), "Correlazione"]}
+              formatter={(v) => [Number(v).toFixed(2), "Correlazione"]}
             />
             <ReferenceArea y1={-0.2} y2={0.2} fill="var(--muted)" fillOpacity={0.5} label={{ value: "zona neutra", fontSize: 10, fill: "var(--muted-foreground)" }} />
             <ReferenceLine y={0} stroke="var(--muted-foreground)" strokeDasharray="4 4" />
