@@ -64,9 +64,6 @@ export function ETFSelector({ tickers, onAdd, onRemove, onAnalyze, loading, colo
         </Button>
       </div>
 
-      {error && (
-        <p className="text-sm text-destructive">{error}</p>
-      )}
 
       <div className="flex flex-wrap gap-2">
         <AnimatePresence initial={false}>
