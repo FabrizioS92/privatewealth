@@ -119,7 +119,7 @@ function OnboardingPage() {
       toast.success("Dati demo caricati!");
       navigate({ to: "/dashboard" });
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Errore demo");
+      toast.error(friendlyError(err, "Impossibile caricare i dati demo."));
     } finally {
       setLoadingDemo(false);
     }

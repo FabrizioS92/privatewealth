@@ -109,7 +109,7 @@ function PortfolioPage() {
       { onConflict: "user_id,isin" },
     );
     if (error) {
-      toast.error(error.message);
+      toast.error(friendlyError(error, "Impossibile salvare il prezzo."));
       return;
     }
     setPrices((p) => ({ ...p, [editing.isin]: price }));
