@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { useServerFn } from "@tanstack/react-start";
 import { createFileRoute } from "@tanstack/react-router";
 import { motion } from "framer-motion";
 import { BarChart2, RefreshCw } from "lucide-react";
@@ -10,7 +11,7 @@ import { CorrelationHeatmap } from "@/components/correlation/correlation-heatmap
 import { InsightCards, type Insight } from "@/components/correlation/insight-cards";
 import { RollingChart } from "@/components/correlation/rolling-chart";
 import { DiversificationScore } from "@/components/correlation/diversification-score";
-import { fetchManySeries, type PriceSeries } from "@/lib/yahoo-finance";
+import { fetchManySeriesServer, type PriceSeries } from "@/lib/yahoo-finance";
 import {
   alignSeries,
   averageOffDiagonal,
@@ -96,6 +97,7 @@ function buildInsights(result: AnalysisResult): Insight[] {
 }
 
 function CorrelationPage() {
+  const fetchSeries = useServerFn(fetchManySeriesServer);
   const [tickers, setTickers] = useState<string[]>(DEFAULT_TICKERS);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -122,7 +124,7 @@ function CorrelationPage() {
     setLoading(true);
     setError(null);
     try {
-      const series = await fetchManySeries(tickers);
+      const series = await fetchSeries({ data: { tickers } });
       // Compute log returns and align all to the shortest series
       const returns = series.map((s) => logReturns(s.prices));
       const minLen = Math.min(...returns.map((r) => r.length));
