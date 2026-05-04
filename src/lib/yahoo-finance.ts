@@ -24,6 +24,9 @@ interface YahooResponse {
 
 const BASE = "https://query1.finance.yahoo.com/v8/finance/chart/";
 const FALLBACK_BASE = "https://query2.finance.yahoo.com/v8/finance/chart/";
+const TICKER_ALIASES: Record<string, string[]> = {
+  "AGGH.L": ["AGGG.L", "AGGH.MI"],
+};
 
 async function fetchYahooRaw(url: string): Promise<YahooResponse> {
   const res = await fetch(url, {
@@ -42,15 +45,23 @@ export async function fetchPriceSeries(
   range: string = "1y",
 ): Promise<PriceSeries> {
   const trimmed = ticker.trim().toUpperCase();
-  const url = `${BASE}${encodeURIComponent(trimmed)}?interval=1d&range=${range}`;
-  let data: YahooResponse;
-  try {
-    data = await fetchYahooRaw(url);
-  } catch {
-    data = await fetchYahooRaw(`${FALLBACK_BASE}${encodeURIComponent(trimmed)}?interval=1d&range=${range}`);
+  const candidates = [trimmed, ...(TICKER_ALIASES[trimmed] ?? [])];
+  let data: YahooResponse | null = null;
+  for (const candidate of candidates) {
+    try {
+      data = await fetchYahooRaw(`${BASE}${encodeURIComponent(candidate)}?interval=1d&range=${range}`);
+      if (data.chart?.result?.[0]?.timestamp?.length) break;
+    } catch {
+      try {
+        data = await fetchYahooRaw(`${FALLBACK_BASE}${encodeURIComponent(candidate)}?interval=1d&range=${range}`);
+        if (data.chart?.result?.[0]?.timestamp?.length) break;
+      } catch {
+        data = null;
+      }
+    }
   }
 
-  const result = data.chart?.result?.[0];
+  const result = data?.chart?.result?.[0];
   if (!result || !result.timestamp || result.timestamp.length === 0) {
     throw new Error("ETF non trovato");
   }
