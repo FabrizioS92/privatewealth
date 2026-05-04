@@ -173,16 +173,39 @@ async function fetchJustEtfHtml(isin: string): Promise<string | null> {
   return res.text();
 }
 
-async function scrapeJustEtf(isin: string): Promise<ScrapedRegion[] | null> {
-  const fromFirecrawl = await scrapeWithFirecrawl(isin);
-  if (fromFirecrawl && fromFirecrawl.length > 0) {
-    return fromFirecrawl;
+async function fetchJinaMarkdown(isin: string): Promise<string | null> {
+  const res = await fetch(`${JINA_READER_BASE_URL}${encodeURI(`${JUSTETF_BASE_URL}${isin}`)}`, {
+    headers: {
+      "user-agent": "Mozilla/5.0",
+      "accept-language": "en-US,en;q=0.9",
+    },
+  });
+
+  if (!res.ok) {
+    console.error("Jina reader fetch failed", res.status, await res.text());
+    return null;
   }
 
-  const html = await fetchJustEtfHtml(isin);
-  if (!html) return null;
+  return res.text();
+}
 
-  return parseJustEtfHtml(html, isin);
+async function scrapeJustEtf(isin: string): Promise<ScrapedRegion[] | null> {
+  const html = await fetchJustEtfHtml(isin);
+  if (html) {
+    const fromHtml = parseJustEtfHtml(html, isin);
+    if (fromHtml && fromHtml.length > 0) return fromHtml;
+  }
+
+  const fromFirecrawl = await scrapeWithFirecrawl(isin);
+  if (fromFirecrawl && fromFirecrawl.length > 0) return fromFirecrawl;
+
+  const jinaMarkdown = await fetchJinaMarkdown(isin);
+  if (jinaMarkdown) {
+    const fromJina = parseCountriesTable(jinaMarkdown.split("\n"), isin);
+    if (fromJina && fromJina.length > 0) return fromJina;
+  }
+
+  return null;
 }
 
 export const fetchEtfGeoBreakdown = createServerFn({ method: "POST" })
