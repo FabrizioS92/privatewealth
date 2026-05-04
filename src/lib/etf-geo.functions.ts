@@ -5,6 +5,7 @@ import { countryToRegion, REGION_KEYS, type RegionKey } from "@/lib/regions";
 
 const isinRegex = /^[A-Z]{2}[A-Z0-9]{9}\d$/;
 const JUSTETF_BASE_URL = "https://www.justetf.com/en/etf-profile.html?isin=";
+const JINA_READER_BASE_URL = "https://r.jina.ai/http://r.jina.ai/http://";
 
 interface ScrapedRegion {
   region: RegionKey;
@@ -75,7 +76,9 @@ function parseCountriesTable(lines: string[], isin: string): ScrapedRegion[] | n
     if (!inSection || !trimmed || trimmed.toLowerCase() === "show more") continue;
     if (/^\|?\s*-{2,}/.test(trimmed)) continue;
 
-    const match = trimmed.match(/^\|?\s*(.+?)\s*\|\s*(\d+(?:[.,]\d+)?)\s*%/);
+    const match =
+      trimmed.match(/^\|?\s*(.+?)\s*\|\s*(\d+(?:[.,]\d+)?)\s*%/) ??
+      trimmed.match(/^\s*(.+?)\s+(\d+(?:[.,]\d+)?)\s*%\s*$/);
     if (!match) continue;
 
     const country = normalizeCountryLabel(match[1]);
@@ -92,22 +95,33 @@ function parseCountriesTable(lines: string[], isin: string): ScrapedRegion[] | n
   return finalizeRegions(buckets, isin);
 }
 
+function addCountryBucket(buckets: Map<RegionKey, number>, rawCountry: string, rawPct: string) {
+  const country = normalizeCountryLabel(rawCountry);
+  const pct = parseFloat(rawPct.replace(",", "."));
+  if (!country || !Number.isFinite(pct) || pct <= 0 || pct > 100) return;
+
+  const normalized = country.toLowerCase();
+  if (normalized === "country" || normalized === "weighting" || normalized === "show more") return;
+
+  const region = countryToRegion(country);
+  buckets.set(region, (buckets.get(region) ?? 0) + pct);
+}
+
 function parseJustEtfHtml(html: string, isin: string): ScrapedRegion[] | null {
   const sectionMatch = html.match(/<h[1-6][^>]*>\s*Countries\s*<\/h[1-6]>([\s\S]*?)(?=<h[1-6][^>]*>)/i);
   const section = sectionMatch?.[1] ?? html;
-  const rowRegex = /<tr[^>]*>\s*<td[^>]*>([\s\S]*?)<\/td>\s*<td[^>]*>[\s\S]*?(\d+(?:[.,]\d+)?)%/gi;
   const buckets = new Map<RegionKey, number>();
 
-  for (const match of section.matchAll(rowRegex)) {
-    const country = normalizeCountryLabel(match[1] ?? "");
-    const pct = parseFloat((match[2] ?? "").replace(",", "."));
-    if (!country || !Number.isFinite(pct) || pct <= 0 || pct > 100) continue;
+  const dataTestIdRegex = /<tr[^>]*data-testid=["']etf-holdings_countries_row["'][\s\S]*?<td[^>]*data-testid=["']tl_etf-holdings_countries_value_name["'][^>]*>([\s\S]*?)<\/td>[\s\S]*?<span[^>]*data-testid=["']tl_etf-holdings_countries_value_percentage["'][^>]*>\s*(\d+(?:[.,]\d+)?)\s*%\s*<\/span>/gi;
+  for (const match of section.matchAll(dataTestIdRegex)) {
+    addCountryBucket(buckets, match[1] ?? "", match[2] ?? "");
+  }
 
-    const normalized = country.toLowerCase();
-    if (normalized === "country" || normalized === "weighting") continue;
-
-    const region = countryToRegion(country);
-    buckets.set(region, (buckets.get(region) ?? 0) + pct);
+  if (buckets.size === 0) {
+    const rowRegex = /<tr[^>]*>\s*<td[^>]*>([\s\S]*?)<\/td>\s*<td[^>]*>[\s\S]*?(\d+(?:[.,]\d+)?)\s*%/gi;
+    for (const match of section.matchAll(rowRegex)) {
+      addCountryBucket(buckets, match[1] ?? "", match[2] ?? "");
+    }
   }
 
   return finalizeRegions(buckets, isin);
@@ -159,16 +173,39 @@ async function fetchJustEtfHtml(isin: string): Promise<string | null> {
   return res.text();
 }
 
-async function scrapeJustEtf(isin: string): Promise<ScrapedRegion[] | null> {
-  const fromFirecrawl = await scrapeWithFirecrawl(isin);
-  if (fromFirecrawl && fromFirecrawl.length > 0) {
-    return fromFirecrawl;
+async function fetchJinaMarkdown(isin: string): Promise<string | null> {
+  const res = await fetch(`${JINA_READER_BASE_URL}${encodeURI(`${JUSTETF_BASE_URL}${isin}`)}`, {
+    headers: {
+      "user-agent": "Mozilla/5.0",
+      "accept-language": "en-US,en;q=0.9",
+    },
+  });
+
+  if (!res.ok) {
+    console.error("Jina reader fetch failed", res.status, await res.text());
+    return null;
   }
 
-  const html = await fetchJustEtfHtml(isin);
-  if (!html) return null;
+  return res.text();
+}
 
-  return parseJustEtfHtml(html, isin);
+async function scrapeJustEtf(isin: string): Promise<ScrapedRegion[] | null> {
+  const html = await fetchJustEtfHtml(isin);
+  if (html) {
+    const fromHtml = parseJustEtfHtml(html, isin);
+    if (fromHtml && fromHtml.length > 0) return fromHtml;
+  }
+
+  const fromFirecrawl = await scrapeWithFirecrawl(isin);
+  if (fromFirecrawl && fromFirecrawl.length > 0) return fromFirecrawl;
+
+  const jinaMarkdown = await fetchJinaMarkdown(isin);
+  if (jinaMarkdown) {
+    const fromJina = parseCountriesTable(jinaMarkdown.split("\n"), isin);
+    if (fromJina && fromJina.length > 0) return fromJina;
+  }
+
+  return null;
 }
 
 export const fetchEtfGeoBreakdown = createServerFn({ method: "POST" })
