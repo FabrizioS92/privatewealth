@@ -1,4 +1,7 @@
-// Fetch adjusted-close price history from Yahoo Finance, with a CORS proxy fallback.
+import { createServerFn } from "@tanstack/react-start";
+import { z } from "zod";
+
+// Fetch adjusted-close price history from Yahoo Finance.
 
 export interface PriceSeries {
   ticker: string;
@@ -20,10 +23,19 @@ interface YahooResponse {
 }
 
 const BASE = "https://query1.finance.yahoo.com/v8/finance/chart/";
-const PROXY = "https://corsproxy.io/?";
+const FALLBACK_BASE = "https://query2.finance.yahoo.com/v8/finance/chart/";
+const TICKER_ALIASES: Record<string, string[]> = {
+  "AGGH.L": ["AGGG.L", "AGGH.MI"],
+};
 
 async function fetchYahooRaw(url: string): Promise<YahooResponse> {
-  const res = await fetch(url);
+  const res = await fetch(url, {
+    headers: {
+      accept: "application/json,text/plain,*/*",
+      "accept-language": "en-US,en;q=0.9,it;q=0.8",
+      "user-agent": "Mozilla/5.0 (compatible; Folio/1.0)",
+    },
+  });
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
   return (await res.json()) as YahooResponse;
 }
@@ -33,16 +45,23 @@ export async function fetchPriceSeries(
   range: string = "1y",
 ): Promise<PriceSeries> {
   const trimmed = ticker.trim().toUpperCase();
-  const url = `${BASE}${encodeURIComponent(trimmed)}?interval=1d&range=${range}`;
-  let data: YahooResponse;
-  try {
-    data = await fetchYahooRaw(url);
-  } catch {
-    // Fallback through CORS proxy
-    data = await fetchYahooRaw(`${PROXY}${encodeURIComponent(url)}`);
+  const candidates = [trimmed, ...(TICKER_ALIASES[trimmed] ?? [])];
+  let data: YahooResponse | null = null;
+  for (const candidate of candidates) {
+    try {
+      data = await fetchYahooRaw(`${BASE}${encodeURIComponent(candidate)}?interval=1d&range=${range}`);
+      if (data.chart?.result?.[0]?.timestamp?.length) break;
+    } catch {
+      try {
+        data = await fetchYahooRaw(`${FALLBACK_BASE}${encodeURIComponent(candidate)}?interval=1d&range=${range}`);
+        if (data.chart?.result?.[0]?.timestamp?.length) break;
+      } catch {
+        data = null;
+      }
+    }
   }
 
-  const result = data.chart?.result?.[0];
+  const result = data?.chart?.result?.[0];
   if (!result || !result.timestamp || result.timestamp.length === 0) {
     throw new Error("ETF non trovato");
   }
@@ -81,3 +100,13 @@ export async function fetchManySeries(tickers: string[]): Promise<PriceSeries[]>
   }
   return out;
 }
+
+export const fetchManySeriesServer = createServerFn({ method: "POST" })
+  .inputValidator(
+    z.object({
+      tickers: z.array(z.string().trim().min(1).max(20)).min(2).max(8),
+    }),
+  )
+  .handler(async ({ data }) => {
+    return fetchManySeries(data.tickers);
+  });
