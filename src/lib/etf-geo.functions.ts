@@ -1,7 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { countryToRegion, REGION_KEYS, type RegionKey } from "@/lib/regions";
+import { REGION_KEYS, type RegionKey } from "@/lib/regions";
 
 const isinRegex = /^[A-Z]{2}[A-Z0-9]{9}\d$/;
 const YAHOO_SEARCH_URL = "https://query1.finance.yahoo.com/v1/finance/search";
@@ -14,7 +14,7 @@ const YAHOO_HEADERS = {
 };
 // Compatibilità con il vincolo DB già presente: la fonte reale è Yahoo Finance,
 // ma il valore persistito deve rimanere tra quelli accettati dallo schema attuale.
-const YAHOO_DB_SOURCE = "justetf";
+const YAHOO_DB_SOURCE = "justetf" as const;
 
 interface ScrapedRegion {
   region: RegionKey;
@@ -102,18 +102,6 @@ const PROFILE_RULES: { match: RegExp; regions: ScrapedRegion[] }[] = [
     regions: [{ region: "europe_developed", weight: 100 }],
   },
 ];
-
-function normalizeCountryLabel(value: string): string {
-  return value
-    .replace(/\[([^\]]+)\]\([^)]+\)/g, "$1")
-    .replace(/<[^>]+>/g, " ")
-    .replace(/&amp;/gi, "&")
-    .replace(/&quot;/gi, '"')
-    .replace(/&#39;|&apos;/gi, "'")
-    .replace(/&nbsp;/gi, " ")
-    .replace(/\s+/g, " ")
-    .trim();
-}
 
 function finalizeRegions(buckets: Map<RegionKey, number>, isin: string, minTotal = 30): ScrapedRegion[] | null {
   if (buckets.size === 0) {
