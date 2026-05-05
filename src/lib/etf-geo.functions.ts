@@ -12,9 +12,7 @@ const YAHOO_HEADERS = {
   accept: "application/json,text/plain,*/*",
   "accept-language": "en-US,en;q=0.9",
 };
-// Compatibilità con il vincolo DB già presente: la fonte reale è Yahoo Finance,
-// ma il valore persistito deve rimanere tra quelli accettati dallo schema attuale.
-const YAHOO_DB_SOURCE = "justetf" as const;
+const YAHOO_DB_SOURCE = "yahoo" as const;
 
 interface ScrapedRegion {
   region: RegionKey;
@@ -240,7 +238,7 @@ export const fetchEtfGeoBreakdown = createServerFn({ method: "POST" })
       return {
         success: true as const,
         cached: true,
-        source: existing[0].source as "justetf" | "manual",
+        source: existing[0].source as "yahoo" | "manual" | "justetf",
         breakdown: existing.map((r) => ({
           region: r.region as RegionKey,
           weight: Number(r.weight),
