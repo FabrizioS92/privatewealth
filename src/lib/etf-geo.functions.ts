@@ -248,19 +248,19 @@ export const fetchEtfGeoBreakdown = createServerFn({ method: "POST" })
       };
     }
 
-    // 2. Scraping JustETF
+    // 2. Import da Yahoo Finance
     try {
-      const scraped = await scrapeJustEtf(data.isin);
+      const scraped = await scrapeYahooFinance(data.isin);
       if (!scraped || scraped.length === 0) {
         return { success: false as const, reason: "not_found" as const };
       }
 
-      const rows = scraped.map((r) => ({
+      const rows = scraped.map((r: ScrapedRegion) => ({
         user_id: userId,
         isin: data.isin,
         region: r.region,
         weight: r.weight,
-        source: "justetf",
+        source: YAHOO_DB_SOURCE,
       }));
       const { error: insertErr } = await supabase.from("etf_geo_breakdown").insert(rows);
       if (insertErr) {
@@ -270,7 +270,7 @@ export const fetchEtfGeoBreakdown = createServerFn({ method: "POST" })
       return {
         success: true as const,
         cached: false,
-        source: "justetf" as const,
+        source: "yahoo" as const,
         breakdown: scraped,
       };
     } catch (err) {
