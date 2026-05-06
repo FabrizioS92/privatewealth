@@ -139,7 +139,7 @@ function Landing() {
             {
               icon: Upload,
               title: "Import semplice",
-              text: "Trascina Transactions.csv. Riconoscimento automatico, dedup intelligente.",
+              text: "Riconoscimento automatico, dedup intelligente.",
               tone: "bg-mint-soft text-primary-foreground",
             },
             {
