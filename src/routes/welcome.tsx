@@ -157,7 +157,7 @@ function Landing() {
             {
               icon: Lock,
               title: "Privato",
-              text: "Crittografia at rest, RLS rigorosa: i dati sono solo tuoi.",
+              text: "I dati sono solo tuoi.",
               tone: "bg-card text-foreground",
             },
           ].map((f, i) => {
