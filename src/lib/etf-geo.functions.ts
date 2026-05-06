@@ -212,7 +212,7 @@ export const fetchEtfGeoBreakdown = createServerFn({ method: "POST" })
       .eq("user_id", userId)
       .eq("isin", data.isin);
 
-    if (existing && existing.length > 0) {
+    if (existing && existing.length > 0 && existing[0].source !== "yahoo") {
       return {
         success: true as const,
         cached: true,
@@ -222,6 +222,10 @@ export const fetchEtfGeoBreakdown = createServerFn({ method: "POST" })
           weight: Number(r.weight),
         })),
       };
+    }
+
+    if (existing && existing.length > 0) {
+      await supabase.from("etf_geo_breakdown").delete().eq("user_id", userId).eq("isin", data.isin);
     }
 
     // 2. Import da JustETF, leggendo la tabella Paesi come nel sito.
