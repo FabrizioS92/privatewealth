@@ -4,102 +4,18 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { REGION_KEYS, type RegionKey } from "@/lib/regions";
 
 const isinRegex = /^[A-Z]{2}[A-Z0-9]{9}\d$/;
-const YAHOO_SEARCH_URL = "https://query1.finance.yahoo.com/v1/finance/search";
-const YAHOO_CHART_BASE_URL = "https://query1.finance.yahoo.com/v8/finance/chart/";
-const YAHOO_QUOTE_SUMMARY_BASE_URL = "https://query1.finance.yahoo.com/v10/finance/quoteSummary/";
-const YAHOO_HEADERS = {
-  "user-agent": "Mozilla/5.0",
-  accept: "application/json,text/plain,*/*",
-  "accept-language": "en-US,en;q=0.9",
+const JUSTETF_SOURCE = "justetf" as const;
+const JUSTETF_HEADERS = {
+  "user-agent":
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36",
+  accept: "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+  "accept-language": "it-IT,it;q=0.9,en-US;q=0.8,en;q=0.7",
 };
-const YAHOO_DB_SOURCE = "yahoo" as const;
 
 interface ScrapedRegion {
   region: RegionKey;
   weight: number;
 }
-
-interface YahooQuote {
-  symbol?: string;
-  quoteType?: string;
-  shortname?: string;
-  longname?: string;
-  exchDisp?: string;
-  score?: number;
-}
-
-interface YahooResolvedEtf {
-  symbol: string;
-  name: string;
-}
-
-interface YahooSearchResponse {
-  quotes?: YahooQuote[];
-}
-
-interface YahooChartResponse {
-  chart?: {
-    result?: { meta?: { symbol?: string; instrumentType?: string } }[];
-    error?: unknown;
-  };
-}
-
-interface YahooHolding {
-  symbol?: string;
-  holdingName?: string;
-  holdingPercent?: { raw?: number };
-}
-
-interface YahooQuoteSummaryResponse {
-  quoteSummary?: {
-    result?: { topHoldings?: { holdings?: YahooHolding[] } }[];
-    error?: unknown;
-  };
-}
-
-const PROFILE_RULES: { match: RegExp; regions: ScrapedRegion[] }[] = [
-  {
-    match: /\b(s\s*&\s*p\s*500|sp\s*500|cspx|csspx|vuaa|vusd|iuit|information technology|nasdaq)\b/i,
-    regions: [{ region: "north_america", weight: 100 }],
-  },
-  {
-    match: /\b(emerging|em\s+imi|eimi|iemg|msci\s+em)\b/i,
-    regions: [{ region: "emerging_markets", weight: 100 }],
-  },
-  {
-    match: /\b(all[-\s]?world|ftse\s+all|vwce|vwra|vwrp|isac|ssac)\b/i,
-    regions: [
-      { region: "north_america", weight: 63.5 },
-      { region: "europe_developed", weight: 14.5 },
-      { region: "asia_developed", weight: 11.5 },
-      { region: "emerging_markets", weight: 9.5 },
-      { region: "other", weight: 1 },
-    ],
-  },
-  {
-    match: /\b(msci\s+world|core\s+world|iwda|swda|eunu)\b/i,
-    regions: [
-      { region: "north_america", weight: 74 },
-      { region: "europe_developed", weight: 16 },
-      { region: "asia_developed", weight: 9.5 },
-      { region: "other", weight: 0.5 },
-    ],
-  },
-  {
-    match: /\b(global\s+agg|global\s+aggregate|aggg|aggh|0ggh)\b/i,
-    regions: [
-      { region: "north_america", weight: 45 },
-      { region: "europe_developed", weight: 35 },
-      { region: "asia_developed", weight: 13 },
-      { region: "emerging_markets", weight: 5 },
-      { region: "other", weight: 2 },
-    ],
-  },
-  {
-    match: /\b(euro|eur)\b.*\b(corp|corporate|aggregate|bond)\b/i,
-    regions: [{ region: "europe_developed", weight: 100 }],
-  },
-];
 
 function finalizeRegions(buckets: Map<RegionKey, number>, isin: string, minTotal = 30): ScrapedRegion[] | null {
   if (buckets.size === 0) {
