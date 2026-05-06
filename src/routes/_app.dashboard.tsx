@@ -60,7 +60,7 @@ function Dashboard() {
             .select("isin,price,recorded_at")
             .eq("user_id", user.id)
             .order("recorded_at", { ascending: true }),
-          supabase.from("etf_geo_breakdown").select("isin,region,weight").eq("user_id", user.id),
+          supabase.from("etf_geo_breakdown").select("isin,region,weight,source").eq("user_id", user.id),
         ]);
 
       setTransactions(
@@ -89,6 +89,7 @@ function Dashboard() {
       setDividendsTotal((divs ?? []).reduce((s, d) => s + Number(d.net_amount), 0));
       const bdMap: BreakdownMap = {};
       (bdData ?? []).forEach((row) => {
+        if (row.source === "yahoo") return;
         const isin = String(row.isin);
         if (!bdMap[isin]) bdMap[isin] = [];
         bdMap[isin].push({
