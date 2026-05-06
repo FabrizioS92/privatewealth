@@ -126,7 +126,8 @@ function countryKey(value: string): string {
 }
 
 function parsePercent(value: string): number | null {
-  const normalized = value.replace(/\./g, "").replace(",", ".");
+  const compact = value.trim();
+  const normalized = compact.includes(",") ? compact.replace(/\./g, "").replace(",", ".") : compact;
   const parsed = Number.parseFloat(normalized);
   return Number.isFinite(parsed) && parsed > 0 ? parsed : null;
 }
