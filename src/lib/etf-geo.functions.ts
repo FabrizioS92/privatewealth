@@ -19,13 +19,13 @@ interface ScrapedRegion {
 
 function finalizeRegions(buckets: Map<RegionKey, number>, isin: string, minTotal = 30): ScrapedRegion[] | null {
   if (buckets.size === 0) {
-    console.warn("[yahoo-finance] Nessun dato geografico trovato per ISIN", isin);
+    console.warn("[justetf] Nessun dato geografico trovato per ISIN", isin);
     return null;
   }
 
   const total = [...buckets.values()].reduce((sum, value) => sum + value, 0);
   if (total < minTotal) {
-    console.warn("[yahoo-finance] Totale troppo basso", total, "per ISIN", isin);
+    console.warn("[justetf] Totale troppo basso", total, "per ISIN", isin);
     return null;
   }
 
@@ -36,105 +36,166 @@ function finalizeRegions(buckets: Map<RegionKey, number>, isin: string, minTotal
   }));
 }
 
-async function fetchYahooJson<T>(url: string): Promise<T | null> {
-  try {
-    const res = await fetch(url, { headers: YAHOO_HEADERS });
-    if (!res.ok) {
-      console.error("Yahoo Finance request failed", res.status, await res.text());
-      return null;
+const COUNTRY_TO_REGION: Record<string, RegionKey> = {
+  "stati uniti": "north_america",
+  "united states": "north_america",
+  "usa": "north_america",
+  "canada": "north_america",
+  "giappone": "asia_developed",
+  "japan": "asia_developed",
+  "australia": "asia_developed",
+  "hong kong": "asia_developed",
+  "singapore": "asia_developed",
+  "nuova zelanda": "asia_developed",
+  "new zealand": "asia_developed",
+  "regno unito": "europe_developed",
+  "united kingdom": "europe_developed",
+  "gran bretagna": "europe_developed",
+  "germania": "europe_developed",
+  "germany": "europe_developed",
+  "francia": "europe_developed",
+  "france": "europe_developed",
+  "svizzera": "europe_developed",
+  "switzerland": "europe_developed",
+  "paesi bassi": "europe_developed",
+  "netherlands": "europe_developed",
+  "olanda": "europe_developed",
+  "italia": "europe_developed",
+  "italy": "europe_developed",
+  "spagna": "europe_developed",
+  "spain": "europe_developed",
+  "svezia": "europe_developed",
+  "sweden": "europe_developed",
+  "danimarca": "europe_developed",
+  "denmark": "europe_developed",
+  "finlandia": "europe_developed",
+  "finland": "europe_developed",
+  "norvegia": "europe_developed",
+  "norway": "europe_developed",
+  "belgio": "europe_developed",
+  "belgium": "europe_developed",
+  "austria": "europe_developed",
+  "irlanda": "europe_developed",
+  "ireland": "europe_developed",
+  "portogallo": "europe_developed",
+  "portugal": "europe_developed",
+  "cina": "emerging_markets",
+  "china": "emerging_markets",
+  "india": "emerging_markets",
+  "taiwan": "emerging_markets",
+  "corea del sud": "emerging_markets",
+  "south korea": "emerging_markets",
+  "brasile": "emerging_markets",
+  "brazil": "emerging_markets",
+  "messico": "emerging_markets",
+  "mexico": "emerging_markets",
+  "sudafrica": "emerging_markets",
+  "south africa": "emerging_markets",
+  "arabia saudita": "emerging_markets",
+  "saudi arabia": "emerging_markets",
+  "indonesia": "emerging_markets",
+  "thailandia": "emerging_markets",
+  "thailand": "emerging_markets",
+  "malesia": "emerging_markets",
+  "malaysia": "emerging_markets",
+  "altri": "other",
+  "altro": "other",
+  "other": "other",
+  "others": "other",
+};
+
+function cleanText(value: string): string {
+  return value
+    .replace(/<[^>]*>/g, " ")
+    .replace(/&nbsp;/g, " ")
+    .replace(/&amp;/g, "&")
+    .replace(/&#x27;|&#39;/g, "'")
+    .replace(/&quot;/g, '"')
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function countryKey(value: string): string {
+  return cleanText(value)
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/\s*\([^)]*\)\s*/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function parsePercent(value: string): number | null {
+  const normalized = value.replace(/\./g, "").replace(",", ".");
+  const parsed = Number.parseFloat(normalized);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : null;
+}
+
+function addCountryToBuckets(buckets: Map<RegionKey, number>, country: string, weight: number) {
+  const region = COUNTRY_TO_REGION[countryKey(country)];
+  if (!region) return;
+  buckets.set(region, (buckets.get(region) ?? 0) + weight);
+}
+
+function parseJustEtfCountries(content: string, isin: string): ScrapedRegion[] | null {
+  const buckets = new Map<RegionKey, number>();
+  const rowRegex = /<tr[^>]*data-testid=["']etf-holdings_countries_row["'][^>]*>(.*?)<\/tr>/gis;
+
+  for (const rowMatch of content.matchAll(rowRegex)) {
+    const row = rowMatch[1] ?? "";
+    const name = row.match(/data-testid=["']tl_etf-holdings_countries_value_name["'][^>]*>(.*?)<\/td>/is)?.[1];
+    const pct = row.match(/data-testid=["']tl_etf-holdings_countries_value_percentage["'][^>]*>\s*([\d.,]+)\s*%/is)?.[1];
+    const weight = pct ? parsePercent(pct) : null;
+    if (name && weight) addCountryToBuckets(buckets, name, weight);
+  }
+
+  if (buckets.size === 0) {
+    const plainText = cleanText(content);
+    const textRegex = /([A-Za-zÀ-ÿ][A-Za-zÀ-ÿ' .-]{2,}?)\s+(\d{1,3}(?:[,.]\d+)?)\s*%/g;
+    for (const match of plainText.matchAll(textRegex)) {
+      const weight = parsePercent(match[2] ?? "");
+      if (match[1] && weight) addCountryToBuckets(buckets, match[1], weight);
     }
-    return (await res.json()) as T;
+  }
+
+  return finalizeRegions(buckets, isin, 30);
+}
+
+async function fetchJustEtfPage(url: string): Promise<string | null> {
+  try {
+    const res = await fetch(url, { headers: JUSTETF_HEADERS, redirect: "follow" });
+    if (!res.ok) return null;
+    const text = await res.text();
+    return text.includes("etf-holdings_countries") || text.includes("Paesi") || text.includes("Countries")
+      ? text
+      : null;
   } catch (err) {
-    console.error("Yahoo Finance request error", err);
+    console.error("JustETF request error", err);
     return null;
   }
 }
 
-async function resolveYahooEtf(isin: string): Promise<YahooResolvedEtf | null> {
-  const url = `${YAHOO_SEARCH_URL}?q=${encodeURIComponent(isin)}&quotesCount=10&newsCount=0`;
-  const json = await fetchYahooJson<YahooSearchResponse>(url);
-  const quotes = json?.quotes ?? [];
-  const candidates = quotes
-    .filter((quote) => quote.symbol && ["ETF", "MUTUALFUND"].includes((quote.quoteType ?? "").toUpperCase()))
-    .sort((a, b) => {
-      const aEtf = (a.quoteType ?? "").toUpperCase() === "ETF" ? 1 : 0;
-      const bEtf = (b.quoteType ?? "").toUpperCase() === "ETF" ? 1 : 0;
-      return bEtf - aEtf || (b.score ?? 0) - (a.score ?? 0);
-    });
+async function scrapeJustEtf(isin: string): Promise<ScrapedRegion[] | null> {
+  const profilePaths = [
+    `https://www.justetf.com/it/etf-profile.html?isin=${encodeURIComponent(isin)}`,
+    `https://www.justetf.com/en/etf-profile.html?isin=${encodeURIComponent(isin)}`,
+  ];
 
-  for (const quote of candidates) {
-    const symbol = quote.symbol?.trim();
-    if (!symbol) continue;
-    const chart = await fetchYahooJson<YahooChartResponse>(
-      `${YAHOO_CHART_BASE_URL}${encodeURIComponent(symbol)}?interval=1d&range=5d`,
-    );
-    const meta = chart?.chart?.result?.[0]?.meta;
-    if (!chart?.chart?.error && meta) {
-      return {
-        symbol: meta.symbol || symbol,
-        name: quote.longname || quote.shortname || symbol,
-      };
-    }
+  for (const url of profilePaths) {
+    const html = await fetchJustEtfPage(url);
+    if (!html) continue;
+    const parsed = parseJustEtfCountries(html, isin);
+    if (parsed?.length) return parsed;
   }
 
-  const fallback = candidates[0];
-  if (!fallback?.symbol) return null;
-  return {
-    symbol: fallback.symbol,
-    name: fallback.longname || fallback.shortname || fallback.symbol,
-  };
-}
-
-function inferByEtfProfile(isin: string, resolved: YahooResolvedEtf): ScrapedRegion[] | null {
-  const haystack = `${isin} ${resolved.symbol} ${resolved.name}`;
-  return PROFILE_RULES.find((rule) => rule.match.test(haystack))?.regions ?? null;
-}
-
-function regionFromYahooHoldingSymbol(symbol: string | undefined): RegionKey | null {
-  const value = String(symbol ?? "").trim().toUpperCase();
-  if (!value) return null;
-
-  if (/\.(TO|V|NE|CN)$/.test(value)) return "north_america";
-  if (/\.(L|SW|PA|DE|F|BE|MI|AS|MC|ST|CO|OL|BR|VI|HE|LS|IR|WA|PR)$/.test(value)) {
-    return "europe_developed";
+  for (const url of profilePaths) {
+    const jinaUrl = `https://r.jina.ai/http://r.jina.ai/http://`;
+    void jinaUrl;
+    const markdown = await fetchJustEtfPage(`https://r.jina.ai/http://r.jina.ai/http://example.invalid`);
+    void markdown;
   }
-  if (/\.(T|KS|KQ|TW|HK|SI|AX|NZ|IL)$/.test(value)) return "asia_developed";
-  if (/\.(SS|SZ|NS|BO|SA|MX|JO|IS|BK|JK|KL|PM|VN|QA|KW|AE)$/.test(value)) {
-    return "emerging_markets";
-  }
-  if (/^[A-Z]{1,5}$/.test(value)) return "north_america";
 
   return null;
-}
-
-async function fetchYahooTopHoldings(symbol: string): Promise<YahooHolding[]> {
-  const url = `${YAHOO_QUOTE_SUMMARY_BASE_URL}${encodeURIComponent(symbol)}?modules=topHoldings`;
-  const json = await fetchYahooJson<YahooQuoteSummaryResponse>(url);
-  return json?.quoteSummary?.result?.[0]?.topHoldings?.holdings ?? [];
-}
-
-async function inferFromYahooTopHoldings(isin: string, symbol: string): Promise<ScrapedRegion[] | null> {
-  const holdings = await fetchYahooTopHoldings(symbol);
-  const buckets = new Map<RegionKey, number>();
-
-  for (const holding of holdings) {
-    const region = regionFromYahooHoldingSymbol(holding.symbol);
-    const rawWeight = holding.holdingPercent?.raw;
-    if (!region || !Number.isFinite(rawWeight) || !rawWeight || rawWeight <= 0) continue;
-    buckets.set(region, (buckets.get(region) ?? 0) + rawWeight);
-  }
-
-  return finalizeRegions(buckets, isin, 0.01);
-}
-
-async function scrapeYahooFinance(isin: string): Promise<ScrapedRegion[] | null> {
-  const resolved = await resolveYahooEtf(isin);
-  if (!resolved) return null;
-
-  const fromProfile = inferByEtfProfile(isin, resolved);
-  if (fromProfile) return fromProfile;
-
-  return inferFromYahooTopHoldings(isin, resolved.symbol);
 }
 
 export const fetchEtfGeoBreakdown = createServerFn({ method: "POST" })
