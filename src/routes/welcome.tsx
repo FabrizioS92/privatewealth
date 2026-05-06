@@ -86,7 +86,7 @@ function Landing() {
             </span>
           </h1>
           <p className="mx-auto mt-7 max-w-xl text-base leading-relaxed text-muted-foreground md:text-lg">
-            Importa i CSV DEGIRO, calcola PMC e P&amp;L, traccia dividendi
+            Tieni traccia dei tuoi investimenti<br />
             con un'interfaccia pensata per essere usata davvero.
           </p>
           <div className="mt-9 flex flex-col items-center justify-center gap-3 sm:flex-row">
