@@ -143,11 +143,11 @@
   );
   --gradient-hero: radial-gradient(
       ellipse at 0% 0%,
-      oklch(0.92 0.07 155 / 60%),
+      oklch(0.32 0.08 155 / 45%),
       transparent 55%
     ),
-    radial-gradient(ellipse at 100% 100%, oklch(0.92 0.05 30 / 35%), transparent 50%),
-    linear-gradient(180deg, oklch(0.97 0.012 90), oklch(0.95 0.014 95));
+    radial-gradient(ellipse at 100% 100%, oklch(0.30 0.08 30 / 30%), transparent 50%),
+    linear-gradient(180deg, oklch(0 0 0), oklch(0.04 0.005 240));
   --gradient-card-mint: linear-gradient(
     140deg,
     oklch(0.92 0.07 155),
