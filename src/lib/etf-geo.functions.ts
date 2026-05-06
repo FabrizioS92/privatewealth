@@ -189,10 +189,11 @@ async function scrapeJustEtf(isin: string): Promise<ScrapedRegion[] | null> {
   }
 
   for (const url of profilePaths) {
-    const jinaUrl = `https://r.jina.ai/http://r.jina.ai/http://`;
-    void jinaUrl;
-    const markdown = await fetchJustEtfPage(`https://r.jina.ai/http://r.jina.ai/http://example.invalid`);
-    void markdown;
+    const readerUrl = `https://r.jina.ai/http://${url.replace(/^https?:\/\//, "")}`;
+    const markdown = await fetchJustEtfPage(readerUrl);
+    if (!markdown) continue;
+    const parsed = parseJustEtfCountries(markdown, isin);
+    if (parsed?.length) return parsed;
   }
 
   return null;
@@ -223,9 +224,9 @@ export const fetchEtfGeoBreakdown = createServerFn({ method: "POST" })
       };
     }
 
-    // 2. Import da Yahoo Finance
+    // 2. Import da JustETF, leggendo la tabella Paesi come nel sito.
     try {
-      const scraped = await scrapeYahooFinance(data.isin);
+      const scraped = await scrapeJustEtf(data.isin);
       if (!scraped || scraped.length === 0) {
         return { success: false as const, reason: "not_found" as const };
       }
@@ -235,7 +236,7 @@ export const fetchEtfGeoBreakdown = createServerFn({ method: "POST" })
         isin: data.isin,
         region: r.region,
         weight: r.weight,
-        source: YAHOO_DB_SOURCE,
+        source: JUSTETF_SOURCE,
       }));
       const { error: insertErr } = await supabase.from("etf_geo_breakdown").insert(rows);
       if (insertErr) {
@@ -245,7 +246,7 @@ export const fetchEtfGeoBreakdown = createServerFn({ method: "POST" })
       return {
         success: true as const,
         cached: false,
-        source: "yahoo" as const,
+        source: JUSTETF_SOURCE,
         breakdown: scraped,
       };
     } catch (err) {
