@@ -188,15 +188,15 @@ function EtfBreakdownRow({
     try {
       const res = await fetchFn({ data: { isin } });
       if (res.success) {
-        toast.success(`Composizione importata da ${res.cached ? "cache" : "Yahoo Finance"}`);
+        toast.success(`Composizione importata da ${res.cached ? "cache" : "JustETF"}`);
         onSaved(isin, res.breakdown);
       } else {
-        toast.error("ETF non trovato su Yahoo Finance — inseriscilo manualmente");
+        toast.error("ETF non trovato su JustETF — inseriscilo manualmente");
         setEditing(true);
       }
     } catch (err) {
       console.error(err);
-      toast.error("Errore durante l'import da Yahoo Finance");
+      toast.error("Errore durante l'import da JustETF");
       setEditing(true);
     } finally {
       setLoading(false);
