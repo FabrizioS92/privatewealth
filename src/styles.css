@@ -74,15 +74,15 @@
 :root {
   --radius: 1.5rem;
 
-  /* Cream / off-white background, deep ink type */
-  --background: oklch(0.97 0.012 90);
-  --foreground: oklch(0.18 0.01 240);
+  /* Pure black background, light type */
+  --background: oklch(0 0 0);
+  --foreground: oklch(0.96 0.005 240);
 
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.18 0.01 240);
+  --card: oklch(0.16 0.005 240);
+  --card-foreground: oklch(0.96 0.005 240);
 
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.18 0.01 240);
+  --popover: oklch(0.16 0.005 240);
+  --popover-foreground: oklch(0.96 0.005 240);
 
   /* Mint green primary */
   --primary: oklch(0.78 0.14 155);
